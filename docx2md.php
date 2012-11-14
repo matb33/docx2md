@@ -210,24 +210,23 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 		<i:heading>
 			<xsl:attribute name="level"><xsl:value-of select="$level" /></xsl:attribute>
 			<xsl:if test="$type != ''"><xsl:attribute name="type"><xsl:value-of select="$type" /></xsl:attribute></xsl:if>
-			<xsl:apply-templates select="w:r | w:hyperlink" />
+			<xsl:apply-templates />
 		</i:heading>
 	</xsl:template>
 
 	<!-- Regular paragraph style -->
 	<xsl:template match="w:p">
-		<!--i:para><xsl:apply-templates select="w:r | w:hyperlink | w:ins" /></i:para-->
 		<i:para><xsl:apply-templates /></i:para>
 	</xsl:template>
 
 	<!-- Bullet style -->
 	<xsl:template match="w:p[ w:pPr/w:numPr ]">
-		<i:listitem level="{ w:pPr/w:numPr/w:ilvl/@w:val }"><xsl:apply-templates select="w:r | w:hyperlink" /></i:listitem>
+		<i:listitem level="{ w:pPr/w:numPr/w:ilvl/@w:val }"><xsl:apply-templates /></i:listitem>
 	</xsl:template>
 
 	<!-- Text content -->
 	<xsl:template match="w:r">
-		<xsl:apply-templates select="w:t | w:br | w:drawing" />
+		<xsl:apply-templates />
 	</xsl:template>
 	<xsl:template match="w:r[w:rPr/w:b and not(w:rPr/w:i)]/w:t">
 		<!-- bold -->
@@ -257,7 +256,7 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 			<xsl:if test="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@TargetMode">
 				<xsl:attribute name="target"><xsl:value-of select="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@TargetMode" /></xsl:attribute>
 			</xsl:if>
-			<xsl:apply-templates select="w:r" />
+			<xsl:apply-templates />
 		</i:link>
 	</xsl:template>
 

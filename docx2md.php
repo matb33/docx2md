@@ -299,11 +299,11 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 
 	<xsl:template match="@*|node()"><xsl:copy><xsl:apply-templates select="@*|node()"/></xsl:copy></xsl:template>
 
-	<xsl:template match="i:document"><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:for-each select="//i:link"><xsl:text>&#160;&#160;[</xsl:text><xsl:value-of select="position()" /><xsl:text>]&#160;</xsl:text><xsl:value-of select="@href" /><xsl:text>&#xa;</xsl:text></xsl:for-each></xsl:template>
+	<xsl:template match="i:document"><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:for-each select="//i:link"><xsl:text>&#032;&#032;[</xsl:text><xsl:value-of select="position()" /><xsl:text>]:&#032;</xsl:text><xsl:value-of select="@href" /><xsl:text>&#xa;</xsl:text></xsl:for-each></xsl:template>
 
 	<xsl:template match="i:body"><xsl:apply-templates /></xsl:template>
 
-	<xsl:template match="i:heading"><xsl:value-of select="substring('######', 1, @level)" /><xsl:text>&#160;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:text>&#xa;</xsl:text></xsl:template>
+	<xsl:template match="i:heading"><xsl:value-of select="substring('######', 1, @level)" /><xsl:text>&#032;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:text>&#xa;</xsl:text></xsl:template>
 
 	<xsl:template match="i:link"><xsl:text>[</xsl:text><xsl:value-of select="." /><xsl:text>][</xsl:text><xsl:value-of select="count(preceding::i:link) + 1" /><xsl:text>]</xsl:text></xsl:template>
 
@@ -337,8 +337,8 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 		<xsl:param name="replace" />
 		<xsl:param name="by" />
 		<xsl:choose>
-			<xsl:when test="contains($text, $replace)"><xsl:value-of select="substring-before($text,$replace)" /><xsl:value-of select="$by" /><xsl:call-template name="string-replace-all">
-				<xsl:with-param name="text" select="substring-after($text,$replace)" />
+			<xsl:when test="contains($text, $replace)"><xsl:value-of select="substring-before($text, $replace)" /><xsl:value-of select="$by" /><xsl:call-template name="string-replace-all">
+				<xsl:with-param name="text" select="substring-after($text, $replace)" />
 				<xsl:with-param name="replace" select="$replace" />
 				<xsl:with-param name="by" select="$by" />
 			</xsl:call-template></xsl:when>

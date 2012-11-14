@@ -2,6 +2,7 @@
 <?php
 
 function docx2md($args) {
+
 	if (PHP_SAPI !== "cli") {
 		die("This script is meant to run in command-line mode only.\n");
 	}
@@ -73,6 +74,11 @@ function docx2md($args) {
 	$mainDocument = new DOMDocument("1.0", "UTF-8");
 	$mainDocument->loadXML($xml);
 
+	//$mainDocument->preserveWhiteSpace = false;
+	//$mainDocument->formatOutput = true;
+	//echo $mainDocument->saveXML();
+	//exit();
+
 	//==========================================================================
 	// Step 3: Convert the bulk of the docx XML to an intermediary format
 	//==========================================================================
@@ -84,14 +90,10 @@ function docx2md($args) {
 	$processor->importStyleSheet($xslDocument);
 	$intermediaryDocument = $processor->transformToDoc($mainDocument);
 
-	/*
-	$testDoc = new DOMDocument("1.0", "UTF-8");
-	$testDoc->preserveWhiteSpace = false;
-	$testDoc->loadXML($intermediaryDocument->saveXML());
-	$testDoc->formatOutput = true;
-	echo $testDoc->saveXML();
-	exit();
-	*/
+	//$intermediaryDocument->preserveWhiteSpace = false;
+	//$intermediaryDocument->formatOutput = true;
+	//echo $intermediaryDocument->saveXML();
+	//exit();
 
 	//==========================================================================
 	// Step 4: Convert from the intermediary XML format to Markdown
@@ -113,6 +115,14 @@ function docx2md($args) {
 		file_put_contents($mdFilename, $markdown);
 	} else {
 		echo $markdown;
+	}
+
+	//==========================================================================
+	// Step 6: Clean-up
+	//==========================================================================
+
+	if (file_exists($documentFolder)) {
+		rrmdir($documentFolder);
 	}
 }
 
@@ -195,7 +205,8 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 
 	<!-- Regular paragraph style -->
 	<xsl:template match="w:p">
-		<i:para><xsl:apply-templates select="w:r | w:hyperlink" /></i:para>
+		<!--i:para><xsl:apply-templates select="w:r | w:hyperlink | w:ins" /></i:para-->
+		<i:para><xsl:apply-templates /></i:para>
 	</xsl:template>
 
 	<!-- Bullet style -->
@@ -252,6 +263,14 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 		</i:image>
 	</xsl:template>
 
+	<!-- Edit: Inserted text -->
+	<xsl:template match="w:ins">
+		<xsl:apply-templates />
+	</xsl:template>
+
+	<!-- Edit: Deleted text -->
+	<xsl:template match="w:del" />
+
 </xsl:stylesheet>
 XML
 );
@@ -295,6 +314,14 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 		<xsl:with-param name="by" select="'\*'" />
 	</xsl:call-template></xsl:template>
 
+	<!-- Superscript ® -->
+	<xsl:template match="text()"><xsl:call-template name="string-replace-all">
+		<xsl:with-param name="text" select="." />
+		<xsl:with-param name="replace" select="'®'" />
+		<xsl:with-param name="by" select="'&lt;sup&gt;®&lt;/sup&gt;'" />
+	</xsl:call-template></xsl:template>
+
+	<!-- Utility string replace -->
 	<xsl:template name="string-replace-all">
 		<xsl:param name="text" />
 		<xsl:param name="replace" />

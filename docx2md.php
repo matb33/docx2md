@@ -7,6 +7,17 @@ function docx2md($args) {
 		die("This script is meant to run in command-line mode only.\n");
 	}
 
+	if (count($args) <= 1) {
+		echo "docx2md: Written by Mathieu Bouchard @matb33\n";
+		echo "Converts MS Word .docx files to Markdown format.\n";
+		echo "\n";
+		echo "Usage: php ./docx2md.php input.docx [output.md]\n";
+		echo "\n";
+		echo "If not output file is specified, writes to STDOUT.\n";
+		echo "\n";
+		exit();
+	}
+
 	//==========================================================================
 	// Extract command-line parameters
 	//==========================================================================

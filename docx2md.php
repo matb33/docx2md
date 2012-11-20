@@ -39,6 +39,7 @@ function docx2md($args) {
 		$docxFilename = realpath($docxFilename);
 	}
 
+	// Generate a random extension so as not to overwrite destination filename
 	if ($mdFilename !== null && file_exists($mdFilename)) {
 		$mdFilename = $mdFilename . "." . substr(md5(uniqid(rand(), true)), 0, 5);
 	}
@@ -85,10 +86,10 @@ function docx2md($args) {
 	$mainDocument = new DOMDocument("1.0", "UTF-8");
 	$mainDocument->loadXML($xml);
 
-	$mainDocument->preserveWhiteSpace = false;
-	$mainDocument->formatOutput = true;
-	echo $mainDocument->saveXML();
-	exit();
+	//$mainDocument->preserveWhiteSpace = false;
+	//$mainDocument->formatOutput = true;
+	//echo $mainDocument->saveXML();
+	//exit();
 
 	//==========================================================================
 	// Step 3: Convert the bulk of the docx XML to an intermediary format
@@ -209,9 +210,9 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 		<i:para><xsl:apply-templates /></i:para>
 	</xsl:template>
 
-	<!-- Bullet style -->
+	<!-- List items -->
 	<xsl:template match="w:p[ w:pPr/w:numPr ]">
-		<i:listitem level="{ w:pPr/w:numPr/w:ilvl/@w:val }"><xsl:apply-templates /></i:listitem>
+		<i:listitem level="{ w:pPr/w:numPr/w:ilvl/@w:val }" type="{ w:pPr/w:numPr/w:numId/@w:val }"><xsl:apply-templates /></i:listitem>
 	</xsl:template>
 
 	<!-- Text content -->
@@ -289,11 +290,11 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 
 	<xsl:template match="@*|node()"><xsl:copy><xsl:apply-templates select="@*|node()"/></xsl:copy></xsl:template>
 
-	<xsl:template match="i:document"><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:for-each select="//i:link"><xsl:text>&#032;&#032;[</xsl:text><xsl:value-of select="position()" /><xsl:text>]:&#032;</xsl:text><xsl:value-of select="@href" /><xsl:text>&#xa;</xsl:text></xsl:for-each></xsl:template>
+	<xsl:template match="i:document"><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:for-each select="//i:link"><xsl:text>&#32;&#32;[</xsl:text><xsl:value-of select="position()" /><xsl:text>]:&#32;</xsl:text><xsl:value-of select="@href" /><xsl:text>&#xa;</xsl:text></xsl:for-each></xsl:template>
 
 	<xsl:template match="i:body"><xsl:apply-templates /></xsl:template>
 
-	<xsl:template match="i:heading"><xsl:value-of select="substring('######', 1, @level)" /><xsl:text>&#032;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:text>&#xa;</xsl:text></xsl:template>
+	<xsl:template match="i:heading"><xsl:value-of select="substring('######', 1, @level)" /><xsl:text>&#32;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:text>&#xa;</xsl:text></xsl:template>
 
 	<xsl:template match="i:link"><xsl:text>[</xsl:text><xsl:value-of select="." /><xsl:text>][</xsl:text><xsl:value-of select="count(preceding::i:link) + 1" /><xsl:text>]</xsl:text></xsl:template>
 
@@ -305,7 +306,14 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 
 	<xsl:template match="i:linebreak"><xsl:text>&#xa;</xsl:text></xsl:template>
 
-	<xsl:template match="i:listitem"><xsl:text>-&#09;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="not(following-sibling::i:listitem)"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
+	<!-- Bullet list-item -->
+	<xsl:template match="i:listitem[@type='1']"><xsl:value-of select="substring('&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;', 1, @level)" /><xsl:text>-&#9;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
+
+	<!-- Numbered list-item -->
+	<xsl:template match="i:listitem[@type='2']"><xsl:variable name="level" select="@level" /><xsl:value-of select="substring('&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;', 1, $level)" /><xsl:value-of select="count(preceding::i:listitem[@level=$level]) + 1" /><xsl:text>.&#9;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
+
+	<!-- Trim whitespace on headings, paragraphs and list-items -->
+	<xsl:template match="i:heading/text() | i:para/text() | i:listitem/text()"><xsl:value-of select="normalize-space(.)" /></xsl:template>
 
 	<!-- Escape asterix -->
 	<xsl:template match="text()"><xsl:call-template name="string-replace-all">

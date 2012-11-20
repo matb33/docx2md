@@ -102,13 +102,33 @@ function docx2md($args) {
 	$processor->importStyleSheet($xslDocument);
 	$intermediaryDocument = $processor->transformToDoc($mainDocument);
 
+	//==========================================================================
+	// Step 4: Use string functions to trim away unwanted whitespace in very
+	// specific places. We do this using string manipulation for increased
+	// control over exactly how we target and trim this whitespace:
+	//==========================================================================
+
+	$xml = $intermediaryDocument->saveXML();
+
+	$tags = array("i:para", "i:heading", "i:listitem");
+
+	foreach ($tags as $tag) {
+		// Remove any number of spaces that follow the opening tag
+		$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", "\\1", $xml);
+
+		// Remove a single space that precedes the closing tag
+		$xml = str_replace(" </{$tag}>", "</{$tag}>", $xml);
+	}
+
+	$intermediaryDocument->loadXML($xml);
+
 	//$intermediaryDocument->preserveWhiteSpace = false;
 	//$intermediaryDocument->formatOutput = true;
 	//echo $intermediaryDocument->saveXML();
 	//exit();
 
 	//==========================================================================
-	// Step 4: Convert from the intermediary XML format to Markdown
+	// Step 5: Convert from the intermediary XML format to Markdown
 	//==========================================================================
 
 	$xslDocument = new DOMDocument("1.0", "UTF-8");
@@ -119,7 +139,7 @@ function docx2md($args) {
 	$markdown = $processor->transformToXml($intermediaryDocument);
 
 	//==========================================================================
-	// Step 5: If the Markdown output file was specified, write it. Otherwise
+	// Step 6: If the Markdown output file was specified, write it. Otherwise
 	// just write to STDOUT (echo)
 	//==========================================================================
 
@@ -130,7 +150,7 @@ function docx2md($args) {
 	}
 
 	//==========================================================================
-	// Step 6: Clean-up
+	// Step 7: Clean-up
 	//==========================================================================
 
 	if (file_exists($documentFolder)) {
@@ -313,7 +333,7 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 	<xsl:template match="i:listitem[@type='2']"><xsl:variable name="level" select="@level" /><xsl:value-of select="substring('&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;', 1, $level)" /><xsl:value-of select="count(preceding::i:listitem[@level=$level]) + 1" /><xsl:text>.&#9;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
 
 	<!-- Trim whitespace on headings, paragraphs and list-items -->
-	<xsl:template match="i:heading/text() | i:para/text() | i:listitem/text()"><xsl:value-of select="normalize-space(.)" /></xsl:template>
+	<!--xsl:template match="i:heading/text() | i:para/text() | i:listitem/text()"><xsl:choose><xsl:when test="substring(., string-length(.), 1) = ' '"><xsl:value-of select="substring(., 1, string-length(.) - 1)" /></xsl:when><xsl:otherwise><xsl:value-of select="." /></xsl:otherwise></xsl:choose></xsl:template-->
 
 	<!-- Escape asterix -->
 	<xsl:template match="text()"><xsl:call-template name="string-replace-all">

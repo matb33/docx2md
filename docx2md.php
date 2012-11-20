@@ -85,10 +85,10 @@ function docx2md($args) {
 	$mainDocument = new DOMDocument("1.0", "UTF-8");
 	$mainDocument->loadXML($xml);
 
-	//$mainDocument->preserveWhiteSpace = false;
-	//$mainDocument->formatOutput = true;
-	//echo $mainDocument->saveXML();
-	//exit();
+	$mainDocument->preserveWhiteSpace = false;
+	$mainDocument->formatOutput = true;
+	echo $mainDocument->saveXML();
+	exit();
 
 	//==========================================================================
 	// Step 3: Convert the bulk of the docx XML to an intermediary format
@@ -191,16 +191,6 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 	</xsl:template>
 
 	<xsl:template match="rels:Relationships" />
-
-	<xsl:template match="data">
-		<i:data>
-			<xsl:apply-templates select="@*|node()" />
-		</i:data>
-	</xsl:template>
-
-	<xsl:template match="data//@*">
-		<xsl:copy />
-	</xsl:template>
 
 	<!-- Heading styles -->
 	<xsl:template match="w:p[ w:pPr/w:pStyle/@w:val[ starts-with( ., 'Heading' ) ] ]">

@@ -3,6 +3,9 @@
 
 function docx2md($args) {
 
+	$debugDumpWord = false;
+	$debugDumpIntermediary = false;
+
 	if (PHP_SAPI !== "cli") {
 		die("This script is meant to run in command-line mode only.\n");
 	}
@@ -86,10 +89,12 @@ function docx2md($args) {
 	$mainDocument = new DOMDocument("1.0", "UTF-8");
 	$mainDocument->loadXML($xml);
 
-	//$mainDocument->preserveWhiteSpace = false;
-	//$mainDocument->formatOutput = true;
-	//echo $mainDocument->saveXML();
-	//exit();
+	if ($debugDumpWord) {
+		$mainDocument->preserveWhiteSpace = false;
+		$mainDocument->formatOutput = true;
+		echo $mainDocument->saveXML();
+		exit();
+	}
 
 	//==========================================================================
 	// Step 3: Convert the bulk of the docx XML to an intermediary format
@@ -122,10 +127,12 @@ function docx2md($args) {
 
 	$intermediaryDocument->loadXML($xml);
 
-	//$intermediaryDocument->preserveWhiteSpace = false;
-	//$intermediaryDocument->formatOutput = true;
-	//echo $intermediaryDocument->saveXML();
-	//exit();
+	if ($debugDumpIntermediary) {
+		$intermediaryDocument->preserveWhiteSpace = false;
+		$intermediaryDocument->formatOutput = true;
+		echo $intermediaryDocument->saveXML();
+		exit();
+	}
 
 	//==========================================================================
 	// Step 5: Convert from the intermediary XML format to Markdown
@@ -218,21 +225,37 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 		<xsl:variable name="style" select="w:pPr/w:pStyle/@w:val[ starts-with( ., 'Heading' ) ]" />
 		<xsl:variable name="level" select="substring( $style, 8, 1 )" />
 		<xsl:variable name="type" select="translate( substring( $style, 9 ), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz' )" />
-		<i:heading>
-			<xsl:attribute name="level"><xsl:value-of select="$level" /></xsl:attribute>
-			<xsl:if test="$type != ''"><xsl:attribute name="type"><xsl:value-of select="$type" /></xsl:attribute></xsl:if>
-			<xsl:apply-templates />
-		</i:heading>
+		<xsl:if test="count(w:r)">
+			<i:heading>
+				<xsl:attribute name="level"><xsl:value-of select="$level" /></xsl:attribute>
+				<xsl:if test="$type != ''"><xsl:attribute name="type"><xsl:value-of select="$type" /></xsl:attribute></xsl:if>
+				<xsl:apply-templates />
+			</i:heading>
+		</xsl:if>
 	</xsl:template>
 
 	<!-- Regular paragraph style -->
 	<xsl:template match="w:p">
-		<i:para><xsl:apply-templates /></i:para>
+		<xsl:if test="count(w:r)">
+			<i:para><xsl:apply-templates /></i:para>
+		</xsl:if>
 	</xsl:template>
 
 	<!-- List items -->
 	<xsl:template match="w:p[ w:pPr/w:numPr ]">
-		<i:listitem level="{ w:pPr/w:numPr/w:ilvl/@w:val }" type="{ w:pPr/w:numPr/w:numId/@w:val }"><xsl:apply-templates /></i:listitem>
+		<xsl:if test="count(w:r)">
+			<i:listitem level="{ w:pPr/w:numPr/w:ilvl/@w:val }" type="{ w:pPr/w:numPr/w:numId/@w:val }"><xsl:apply-templates /></i:listitem>
+		</xsl:if>
+	</xsl:template>
+	<xsl:template match="w:p[ w:pPr/w:pStyle/@w:val = 'ListBullet']">
+		<xsl:if test="count(w:r)">
+			<i:listitem level="0" type="1"><xsl:apply-templates /></i:listitem>
+		</xsl:if>
+	</xsl:template>
+	<xsl:template match="w:p[ w:pPr/w:pStyle/@w:val = 'ListNumber']">
+		<xsl:if test="count(w:r)">
+			<i:listitem level="0" type="2"><xsl:apply-templates /></i:listitem>
+		</xsl:if>
 	</xsl:template>
 
 	<!-- Text content -->
@@ -262,13 +285,15 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 	<!-- Complete hyperlinks -->
 	<xsl:template match="w:hyperlink">
 		<xsl:variable name="id" select="@r:id" />
-		<i:link>
-			<xsl:attribute name="href"><xsl:value-of select="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@Target" /></xsl:attribute>
-			<xsl:if test="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@TargetMode">
-				<xsl:attribute name="target"><xsl:value-of select="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@TargetMode" /></xsl:attribute>
-			</xsl:if>
-			<xsl:apply-templates />
-		</i:link>
+		<xsl:if test="count(w:r)">
+			<i:link>
+				<xsl:attribute name="href"><xsl:value-of select="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@Target" /></xsl:attribute>
+				<xsl:if test="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@TargetMode">
+					<xsl:attribute name="target"><xsl:value-of select="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@TargetMode" /></xsl:attribute>
+				</xsl:if>
+				<xsl:apply-templates />
+			</i:link>
+		</xsl:if>
 	</xsl:template>
 
 	<!-- Images -->
@@ -330,7 +355,7 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 	<xsl:template match="i:listitem[@type='1']"><xsl:value-of select="substring('&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;', 1, @level)" /><xsl:text>-&#9;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
 
 	<!-- Numbered list-item -->
-	<xsl:template match="i:listitem[@type='2']"><xsl:variable name="level" select="@level" /><xsl:value-of select="substring('&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;', 1, $level)" /><xsl:value-of select="count(preceding::i:listitem[@level=$level]) + 1" /><xsl:text>.&#9;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
+	<xsl:template match="i:listitem[@type='2']"><xsl:variable name="level" select="@level" /><xsl:variable name="type" select="@type" /><xsl:value-of select="substring('&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;', 1, $level)" /><xsl:value-of select="count(preceding::i:listitem[@level=$level and @type=$type]) + 1" /><xsl:text>.&#9;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
 
 	<!-- Trim whitespace on headings, paragraphs and list-items -->
 	<!--xsl:template match="i:heading/text() | i:para/text() | i:listitem/text()"><xsl:choose><xsl:when test="substring(., string-length(.), 1) = ' '"><xsl:value-of select="substring(., 1, string-length(.) - 1)" /></xsl:when><xsl:otherwise><xsl:value-of select="." /></xsl:otherwise></xsl:choose></xsl:template-->

@@ -194,6 +194,13 @@ function docx2md($args) {
 	$processor->importStyleSheet($xslDocument);
 	$markdown = $processor->transformToXml($intermediaryDocument);
 
+	// Trim lines so we have no space in the beginning
+	$lines = explode("\n", $markdown);
+	for ($i=0; $i<count($lines); $i++) {
+		$lines[$i] = trim($lines[$i]);
+	}
+	$markdown = implode("\n", $lines);
+
 	//==========================================================================
 	// Step 6: If the Markdown output file was specified, write it. Otherwise
 	// just write to STDOUT (echo)

@@ -2,7 +2,6 @@
 <?php
 
 function docx2md($args) {
-
 	$debugDumpWord = false;
 	$debugDumpIntermediary = false;
 
@@ -16,7 +15,7 @@ function docx2md($args) {
 		echo "\n";
 		echo "Usage: php ./docx2md.php input.docx [output.md]\n";
 		echo "\n";
-		echo "If not output file is specified, writes to STDOUT.\n";
+		echo "If no output file is specified, writes to STDOUT.\n";
 		echo "\n";
 		exit();
 	}
@@ -180,14 +179,14 @@ function extractFolder($zip, $folderName, $destination) {
 }
 
 function rrmdir($dir) {
-    foreach(glob($dir . "/*") as $file) {
-        if(is_dir($file)) {
-            rrmdir($file);
-        } else {
-            unlink($file);
-        }
-    }
-    rmdir($dir);
+	foreach(glob($dir . "/*") as $file) {
+		if(is_dir($file)) {
+			rrmdir($file);
+		} else {
+			unlink($file);
+		}
+	}
+	rmdir($dir);
 }
 
 //==============================================================================

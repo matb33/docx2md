@@ -2,7 +2,6 @@
 <?php
 
 function docx2md($args) {
-
 	$debugDumpWord = false;
 	$debugDumpIntermediary = false;
 
@@ -10,13 +9,37 @@ function docx2md($args) {
 		die("This script is meant to run in command-line mode only.\n");
 	}
 
-	if (count($args) <= 1) {
+	// Check command line options for including images: -i, --image
+	$imageLongOption = array('image');
+	$imageShortOption = $imageLongOption[0][0]; // First letter of *i*mage
+	$options = getopt($imageShortOption, $imageLongOption);
+
+	$includeImages = false;
+	if (array_key_exists($imageShortOption, $options) || array_key_exists($imageLongOption[0], $options)) {
+		$includeImages = true;
+	}
+
+	// Remove first argument: the script name
+	$args = array_slice($args, 1);
+	// Remove all options from the list of arguments
+	$args = array_filter($args, function ($value) {
+		return (substr($value, 0, 1) === '-') === false;
+	});
+	// Re-index the array
+	$args = array_values($args);
+
+	if (count($args) <= 0) {
 		echo "docx2md: Written by Mathieu Bouchard @matb33\n";
 		echo "Converts MS Word .docx files to Markdown format.\n";
 		echo "\n";
-		echo "Usage: php ./docx2md.php input.docx [output.md]\n";
+		echo "Usage: php ./docx2md.php [options] input.docx [output.md]\n";
 		echo "\n";
-		echo "If not output file is specified, writes to STDOUT.\n";
+		echo 'Options:';
+		echo "\n";
+		echo '  -i, --image Include images';
+		echo "\n";
+		echo "\n";
+		echo 'If no output file is specified, writes to STDOUT excluding images.';
 		echo "\n";
 		exit();
 	}
@@ -28,12 +51,15 @@ function docx2md($args) {
 	$docxFilename = null;
 	$mdFilename = null;
 
-	if (array_key_exists(1, $args) && $args[1] !== "") {
-		$docxFilename = $args[1];
+	if (array_key_exists(0, $args) && $args[0] !== "") {
+		$docxFilename = $args[0];
 	}
 
-	if (array_key_exists(2, $args) && $args[2] !== "") {
-		$mdFilename = $args[2];
+	if (array_key_exists(1, $args) && $args[1] !== "") {
+		$mdFilename = $args[1];
+	} else {
+		// Override including images as no output filename has been provided
+		$includeImages = false;
 	}
 
 	if (!file_exists($docxFilename)) {
@@ -48,7 +74,7 @@ function docx2md($args) {
 	}
 
 	//==========================================================================
-	// Step 1: Extract Word doc to a temporary location
+	// Step 1: Extract Word doc to a temporary location and delete relevant images
 	//==========================================================================
 
 	$documentFolder = sys_get_temp_dir() . "/" . md5($docxFilename);
@@ -58,11 +84,27 @@ function docx2md($args) {
 		mkdir($documentFolder);
 	}
 
+	$imageFolder = 'images';
+
+	if ($includeImages) {
+		// Clean-up existing images only associated with the defined markdown file
+		$images = glob("$imageFolder/" . basename($mdFilename, '.md') . '.*.{bmp,gif,jpg,jpeg,png}', GLOB_BRACE);
+		foreach ($images as $image) {
+			if (is_file($image)) {
+				unlink($image);
+			}
+		}
+	}
+
 	$zip = new ZipArchive;
 	$res = $zip->open($docxFilename);
 
 	if ($res === true) {
-		extractFolder($zip, "word/media", $documentFolder);
+		if ($includeImages) {
+			extractFolder($zip, "word/media", $documentFolder, $imageFolder, $mdFilename);
+		} else {
+			extractFolder($zip, "word/media", $documentFolder);
+		}
 		$zip->extractTo($documentFolder, array("word/document.xml", "word/_rels/document.xml.rels", "docProps/core.xml"));
 		$zip->close();
 	} else {
@@ -139,7 +181,14 @@ function docx2md($args) {
 	//==========================================================================
 
 	$xslDocument = new DOMDocument("1.0", "UTF-8");
-	$xslDocument->loadXML(INTERMEDIARY_TO_MARKDOWN_TRANSFORM);
+	if ($includeImages) {
+		// Replace image placeholder with image template
+		$imageTemplate = sprintf(IMAGE_TEMPLATE, $imageFolder, basename($mdFilename, '.md'));
+		$xslDocument->loadXML(sprintf(INTERMEDIARY_TO_MARKDOWN_TRANSFORM, $imageTemplate));
+	} else {
+		// Replace image placeholder with a blank string
+		$xslDocument->loadXML(sprintf(INTERMEDIARY_TO_MARKDOWN_TRANSFORM, ''));
+	}
 
 	$processor = new XSLTProcessor();
 	$processor->importStyleSheet($xslDocument);
@@ -169,25 +218,32 @@ function docx2md($args) {
 // Support functions
 //==============================================================================
 
-function extractFolder($zip, $folderName, $destination) {
+function extractFolder($zip, $folderName, $destination, $imageFolder = null, $mdFilename = null) {
 	for ($i = 0; $i < $zip->numFiles; $i++) {
 		$fileName = $zip->getNameIndex($i);
 
 		if (strpos($fileName, $folderName) !== false) {
+			if (!is_null($imageFolder) && !is_null($mdFilename)) {
+				// Save matching images to disk
+				if (preg_match('([^\s]+(\.(?i)(bmp|gif|jpe?g|png))$)', $fileName)) {
+					file_put_contents("$imageFolder/" . basename($mdFilename, '.md') . '.' . basename($fileName), $zip->getFromIndex($i));
+				}
+			}
+
 			$zip->extractTo($destination, $fileName);
 		}
 	}
 }
 
 function rrmdir($dir) {
-    foreach(glob($dir . "/*") as $file) {
-        if(is_dir($file)) {
-            rrmdir($file);
-        } else {
-            unlink($file);
-        }
-    }
-    rmdir($dir);
+	foreach(glob($dir . "/*") as $file) {
+		if(is_dir($file)) {
+			rrmdir($file);
+		} else {
+			unlink($file);
+		}
+	}
+	rmdir($dir);
 }
 
 //==============================================================================
@@ -325,6 +381,7 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 <?xml version="1.0"?>
 <xsl:stylesheet version="1.0"
 	xmlns:i="urn:docx2md:intermediary"
+	xmlns:str="http://exslt.org/strings" extension-element-prefixes="str"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
 	<xsl:output
@@ -356,6 +413,9 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 
 	<!-- Numbered list-item -->
 	<xsl:template match="i:listitem[@type='2']"><xsl:variable name="level" select="@level" /><xsl:variable name="type" select="@type" /><xsl:value-of select="substring('&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;', 1, $level)" /><xsl:value-of select="count(preceding::i:listitem[@level=$level and @type=$type]) + 1" /><xsl:text>.&#9;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
+
+	<!-- Image Template Placeholder -->
+	%s
 
 	<!-- Trim whitespace on headings, paragraphs and list-items -->
 	<!--xsl:template match="i:heading/text() | i:para/text() | i:listitem/text()"><xsl:choose><xsl:when test="substring(., string-length(.), 1) = ' '"><xsl:value-of select="substring(., 1, string-length(.) - 1)" /></xsl:when><xsl:otherwise><xsl:value-of select="." /></xsl:otherwise></xsl:choose></xsl:template-->
@@ -392,5 +452,7 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 </xsl:stylesheet>
 XML
 );
+
+define('IMAGE_TEMPLATE', '<!-- Image --><xsl:template match="i:image"><xsl:text>![Image](%s/%s.</xsl:text><xsl:value-of select="str:tokenize(@src, \'/\')[last()]" /><xsl:text>)</xsl:text></xsl:template>');
 
 docx2md($argv);

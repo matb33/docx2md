@@ -1,13 +1,12 @@
 #!/usr/bin/php
 <?php
+if (PHP_SAPI !== 'cli') {
+	die('This script is meant to be run in command-line mode only.');
+}
 
 function docx2md($args) {
 	$debugDumpWord = false;
 	$debugDumpIntermediary = false;
-
-	if (PHP_SAPI !== "cli") {
-		die("This script is meant to run in command-line mode only.\n");
-	}
 
 	// Check command line options for including images: -i, --image
 	$imageLongOption = array('image');
@@ -152,7 +151,7 @@ function docx2md($args) {
 	//==========================================================================
 	// Step 4: Use string functions to trim away unwanted whitespace in very
 	// specific places. We do this using string manipulation for increased
-	// control over exactly how we target and trim this whitespace:
+	// control over exactly how we target and trim this whitespace
 	//==========================================================================
 
 	$xml = $intermediaryDocument->saveXML();
@@ -243,6 +242,7 @@ function rrmdir($dir) {
 			unlink($file);
 		}
 	}
+
 	rmdir($dir);
 }
 
@@ -372,7 +372,6 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 
 	<!-- Edit: Deleted text -->
 	<xsl:template match="w:del" />
-
 </xsl:stylesheet>
 XML
 );
@@ -417,9 +416,6 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 	<!-- Image Template Placeholder -->
 	%s
 
-	<!-- Trim whitespace on headings, paragraphs and list-items -->
-	<!--xsl:template match="i:heading/text() | i:para/text() | i:listitem/text()"><xsl:choose><xsl:when test="substring(., string-length(.), 1) = ' '"><xsl:value-of select="substring(., 1, string-length(.) - 1)" /></xsl:when><xsl:otherwise><xsl:value-of select="." /></xsl:otherwise></xsl:choose></xsl:template-->
-
 	<!-- Escape asterix -->
 	<xsl:template match="text()"><xsl:call-template name="string-replace-all">
 		<xsl:with-param name="text" select="." />
@@ -448,7 +444,6 @@ define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
 			<xsl:otherwise><xsl:value-of select="$text" /></xsl:otherwise>
 		</xsl:choose>
 	</xsl:template>
-
 </xsl:stylesheet>
 XML
 );

@@ -343,6 +343,10 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 		<xsl:if test="count(w:r)">
 			<i:para><xsl:apply-templates /></i:para>
 		</xsl:if>
+		<!-- Horizontal line -->
+		<xsl:if test="count(w:pPr/w:pBdr)">
+			<i:line>---</i:line>
+		</xsl:if>
 	</xsl:template>
 
 	<!-- List items -->
@@ -458,6 +462,8 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 	<xsl:template match="i:strikethrough"><xsl:text>~~</xsl:text><xsl:apply-templates /><xsl:text>~~</xsl:text></xsl:template>
 
 	<xsl:template match="i:para"><xsl:if test="./* or text() != ''"><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
+
+	<xsl:template match="i:line"><xsl:text>---&#xa;&#xa;</xsl:text></xsl:template>
 
 	<xsl:template match="i:linebreak"><xsl:text>&#xa;</xsl:text></xsl:template>
 

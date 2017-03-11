@@ -325,10 +325,10 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 	<xsl:template match="rels:Relationships" />
 
 	<!-- Heading styles -->
-	<xsl:template match="w:p[ w:pPr/w:pStyle/@w:val[ starts-with( ., 'Heading' ) ] ]">
-		<xsl:variable name="style" select="w:pPr/w:pStyle/@w:val[ starts-with( ., 'Heading' ) ]" />
-		<xsl:variable name="level" select="substring( $style, 8, 1 )" />
-		<xsl:variable name="type" select="translate( substring( $style, 9 ), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz' )" />
+	<xsl:template match="w:p[w:pPr/w:pStyle/@w:val[starts-with(., 'Heading')]]">
+		<xsl:variable name="style" select="w:pPr/w:pStyle/@w:val[starts-with(., 'Heading')]" />
+		<xsl:variable name="level" select="substring($style, 8, 1)" />
+		<xsl:variable name="type" select="translate(substring($style, 9), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')" />
 		<xsl:if test="count(w:r)">
 			<i:heading>
 				<xsl:attribute name="level"><xsl:value-of select="$level" /></xsl:attribute>
@@ -346,17 +346,17 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 	</xsl:template>
 
 	<!-- List items -->
-	<xsl:template match="w:p[ w:pPr/w:numPr ]">
+	<xsl:template match="w:p[w:pPr/w:numPr]">
 		<xsl:if test="count(w:r)">
-			<i:listitem level="{ w:pPr/w:numPr/w:ilvl/@w:val }" type="{ w:pPr/w:numPr/w:numId/@w:val }"><xsl:apply-templates /></i:listitem>
+			<i:listitem level="{w:pPr/w:numPr/w:ilvl/@w:val}" type="{w:pPr/w:numPr/w:numId/@w:val}"><xsl:apply-templates /></i:listitem>
 		</xsl:if>
 	</xsl:template>
-	<xsl:template match="w:p[ w:pPr/w:pStyle/@w:val = 'ListBullet']">
+	<xsl:template match="w:p[w:pPr/w:pStyle/@w:val = 'ListBullet']">
 		<xsl:if test="count(w:r)">
 			<i:listitem level="0" type="1"><xsl:apply-templates /></i:listitem>
 		</xsl:if>
 	</xsl:template>
-	<xsl:template match="w:p[ w:pPr/w:pStyle/@w:val = 'ListNumber']">
+	<xsl:template match="w:p[w:pPr/w:pStyle/@w:val = 'ListNumber']">
 		<xsl:if test="count(w:r)">
 			<i:listitem level="0" type="2"><xsl:apply-templates /></i:listitem>
 		</xsl:if>
@@ -408,8 +408,8 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 		<xsl:variable name="id" select="@r:embed" />
 		<i:image>
 			<xsl:attribute name="src"><xsl:value-of select="/w:document/data/@word-folder" /><xsl:value-of select="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@Target" /></xsl:attribute>
-			<xsl:attribute name="width"><xsl:value-of select="round( ancestor::w:drawing[1]//wp:extent/@cx div 9525 )" /></xsl:attribute>
-			<xsl:attribute name="height"><xsl:value-of select="round( ancestor::w:drawing[1]//wp:extent/@cy div 9525 )" /></xsl:attribute>
+			<xsl:attribute name="width"><xsl:value-of select="round(ancestor::w:drawing[1]//wp:extent/@cx div 9525)" /></xsl:attribute>
+			<xsl:attribute name="height"><xsl:value-of select="round(ancestor::w:drawing[1]//wp:extent/@cy div 9525)" /></xsl:attribute>
 		</i:image>
 	</xsl:template>
 

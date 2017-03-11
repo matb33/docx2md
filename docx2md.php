@@ -4,6 +4,9 @@ if (PHP_SAPI !== 'cli') {
 	die('This script is meant to be run in command-line mode only.');
 }
 
+const VERSION  = '1.0';
+const ENCODING = 'UTF-8';
+
 function docx2md($args) {
 	$debugDumpWord = false;
 	$debugDumpIntermediary = false;
@@ -114,10 +117,10 @@ function docx2md($args) {
 	// Step 2: Read the main document.xml and also bring in the rels document
 	//==========================================================================
 
-	$wordDocument = new DOMDocument('1.0', 'UTF-8');
+	$wordDocument = new DOMDocument(VERSION, ENCODING);
 	$wordDocument->load($documentFolder . '/word/document.xml');
 
-	$wordDocumentRels = new DOMDocument('1.0', 'UTF-8');
+	$wordDocumentRels = new DOMDocument(VERSION, ENCODING);
 	$wordDocumentRels->load($documentFolder . '/word/_rels/document.xml.rels');
 	$wordDocument->documentElement->appendChild($wordDocument->importNode($wordDocumentRels->documentElement, true));
 
@@ -127,7 +130,7 @@ function docx2md($args) {
 	$xml = str_replace('r:id=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
 	$xml = str_replace('r:embed=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed=', $xml);
 
-	$mainDocument = new DOMDocument('1.0', 'UTF-8');
+	$mainDocument = new DOMDocument(VERSION, ENCODING);
 	$mainDocument->loadXML($xml);
 
 	if ($debugDumpWord) {
@@ -141,7 +144,7 @@ function docx2md($args) {
 	// Step 3: Convert the bulk of the docx XML to an intermediary format
 	//==========================================================================
 
-	$xslDocument = new DOMDocument('1.0', 'UTF-8');
+	$xslDocument = new DOMDocument(VERSION, ENCODING);
 	$xslDocument->loadXML(DOCX_TO_INTERMEDIARY_TRANSFORM);
 
 	$processor = new XSLTProcessor();
@@ -179,7 +182,7 @@ function docx2md($args) {
 	// Step 5: Convert from the intermediary XML format to Markdown
 	//==========================================================================
 
-	$xslDocument = new DOMDocument('1.0', 'UTF-8');
+	$xslDocument = new DOMDocument(VERSION, ENCODING);
 	if ($includeImages) {
 		// Replace image placeholder with image template
 		$imageTemplate = sprintf(IMAGE_TEMPLATE, $imageFolder, basename($mdFilename, '.md'));

@@ -471,18 +471,22 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 	%s
 
 	<!-- Escape asterix -->
-	<xsl:template match="text()"><xsl:call-template name="string-replace-all">
-		<xsl:with-param name="text" select="." />
-		<xsl:with-param name="replace" select="'*'" />
-		<xsl:with-param name="by" select="'\*'" />
-	</xsl:call-template></xsl:template>
+	<xsl:template match="text()">
+		<xsl:call-template name="string-replace-all">
+			<xsl:with-param name="text" select="." />
+			<xsl:with-param name="replace" select="'*'" />
+			<xsl:with-param name="by" select="'\*'" />
+		</xsl:call-template>
+	</xsl:template>
 
 	<!-- Superscript ® -->
-	<xsl:template match="text()"><xsl:call-template name="string-replace-all">
-		<xsl:with-param name="text" select="." />
-		<xsl:with-param name="replace" select="'®'" />
-		<xsl:with-param name="by" select="'&lt;sup&gt;®&lt;/sup&gt;'" />
-	</xsl:call-template></xsl:template>
+	<xsl:template match="text()">
+		<xsl:call-template name="string-replace-all">
+			<xsl:with-param name="text" select="." />
+			<xsl:with-param name="replace" select="'®'" />
+			<xsl:with-param name="by" select="'&lt;sup&gt;®&lt;/sup&gt;'" />
+		</xsl:call-template>
+	</xsl:template>
 
 	<!-- Utility string replace -->
 	<xsl:template name="string-replace-all">

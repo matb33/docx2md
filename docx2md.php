@@ -382,6 +382,10 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 		<!-- Normal -->
 		<xsl:value-of select="." />
 	</xsl:template>
+	<xsl:template match="w:r[w:rPr/w:strike]/w:t">
+		<!-- Strikethrough -->
+		<i:strikethrough><xsl:value-of select="." /></i:strikethrough>
+	</xsl:template>
 	<xsl:template match="w:br">
 		<i:linebreak />
 	</xsl:template>
@@ -450,6 +454,8 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 	<xsl:template match="i:italic"><xsl:text>_</xsl:text><xsl:apply-templates /><xsl:text>_</xsl:text></xsl:template>
 
 	<xsl:template match="i:bold"><xsl:text>**</xsl:text><xsl:apply-templates /><xsl:text>**</xsl:text></xsl:template>
+
+	<xsl:template match="i:strikethrough"><xsl:text>~~</xsl:text><xsl:apply-templates /><xsl:text>~~</xsl:text></xsl:template>
 
 	<xsl:template match="i:para"><xsl:if test="./* or text() != ''"><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
 

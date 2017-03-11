@@ -456,10 +456,10 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 	<xsl:template match="i:linebreak"><xsl:text>&#xa;</xsl:text></xsl:template>
 
 	<!-- Bullet list-item -->
-	<xsl:template match="i:listitem[@type='1']"><xsl:value-of select="substring('&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;', 1, @level)" /><xsl:text>-&#9;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
+	<xsl:template match="i:listitem[@type='1']"><xsl:value-of select="substring('		  ', 1, @level * 2)" /><xsl:text> - </xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
 
 	<!-- Numbered list-item -->
-	<xsl:template match="i:listitem[@type='2']"><xsl:variable name="level" select="@level" /><xsl:variable name="type" select="@type" /><xsl:value-of select="substring('&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;', 1, $level)" /><xsl:value-of select="count(preceding::i:listitem[@level=$level and @type=$type]) + 1" /><xsl:text>.&#9;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
+	<xsl:template match="i:listitem[@type='2']"><xsl:variable name="level" select="@level" /><xsl:variable name="type" select="@type" /><xsl:value-of select="substring('		  ', 1, $level * 2)" /><xsl:text> </xsl:text><xsl:value-of select="count(preceding::i:listitem[@level=$level and @type=$type]) + 1" /><xsl:text>. </xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
 
 	<!-- Image Template Placeholder -->
 	%s

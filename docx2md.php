@@ -48,13 +48,13 @@ function docx2md($args) {
 	//==========================================================================
 
 	$docxFilename = null;
-	$mdFilename = null;
+	$mdFilename   = null;
 
-	if (array_key_exists(0, $args) && $args[0] !== "") {
+	if (array_key_exists(0, $args) && $args[0] !== '') {
 		$docxFilename = $args[0];
 	}
 
-	if (array_key_exists(1, $args) && $args[1] !== "") {
+	if (array_key_exists(1, $args) && $args[1] !== '') {
 		$mdFilename = $args[1];
 	} else {
 		// Override including images as no output filename has been provided
@@ -62,21 +62,21 @@ function docx2md($args) {
 	}
 
 	if (!file_exists($docxFilename)) {
-		die("Input docx file does not exist: " . $docxFilename . "\n");
+		die('Input .docx file does not exist: ' . $docxFilename . "\n");
 	} else {
 		$docxFilename = realpath($docxFilename);
 	}
 
 	// Generate a random extension so as not to overwrite destination filename
 	if ($mdFilename !== null && file_exists($mdFilename)) {
-		$mdFilename = $mdFilename . "." . substr(md5(uniqid(rand(), true)), 0, 5);
+		$mdFilename = $mdFilename . '.' . substr(md5(uniqid(rand(), true)), 0, 5);
 	}
 
 	//==========================================================================
 	// Step 1: Extract Word doc to a temporary location and delete relevant images
 	//==========================================================================
 
-	$documentFolder = sys_get_temp_dir() . "/" . md5($docxFilename);
+	$documentFolder = sys_get_temp_dir() . '/' . md5($docxFilename);
 
 	if (file_exists($documentFolder)) {
 		rrmdir($documentFolder);
@@ -87,7 +87,7 @@ function docx2md($args) {
 
 	if ($includeImages) {
 		// Clean-up existing images only associated with the defined markdown file
-		$images = glob("$imageFolder/" . basename($mdFilename, '.md') . '.*.{bmp,gif,jpg,jpeg,png}', GLOB_BRACE);
+		$images = glob("{$imageFolder}/" . basename($mdFilename, '.md') . '.*.{bmp,gif,jpg,jpeg,png}', GLOB_BRACE);
 		foreach ($images as $image) {
 			if (is_file($image)) {
 				unlink($image);
@@ -100,34 +100,34 @@ function docx2md($args) {
 
 	if ($res === true) {
 		if ($includeImages) {
-			extractFolder($zip, "word/media", $documentFolder, $imageFolder, $mdFilename);
+			extractFolder($zip, 'word/media', $documentFolder, $imageFolder, $mdFilename);
 		} else {
-			extractFolder($zip, "word/media", $documentFolder);
+			extractFolder($zip, 'word/media', $documentFolder);
 		}
-		$zip->extractTo($documentFolder, array("word/document.xml", "word/_rels/document.xml.rels", "docProps/core.xml"));
+		$zip->extractTo($documentFolder, array('word/document.xml', 'word/_rels/document.xml.rels', 'docProps/core.xml'));
 		$zip->close();
 	} else {
-		die("The docx file appears to be corrupt (i.e. it can't be opened using Zip).  Please try re-saving your document and re-uploading, or ensuring that you are providing a valid docx file.\n");
+		die("The .docx file appears to be corrupt (i.e. it can't be opened using Zip). Please try re-saving your document and re-uploading, or ensuring that you are providing a valid .docx file.\n");
 	}
 
 	//==========================================================================
 	// Step 2: Read the main document.xml and also bring in the rels document
 	//==========================================================================
 
-	$wordDocument = new DOMDocument("1.0", "UTF-8");
-	$wordDocument->load($documentFolder . "/word/document.xml");
+	$wordDocument = new DOMDocument('1.0', 'UTF-8');
+	$wordDocument->load($documentFolder . '/word/document.xml');
 
-	$wordDocumentRels = new DOMDocument("1.0", "UTF-8");
-	$wordDocumentRels->load($documentFolder . "/word/_rels/document.xml.rels");
+	$wordDocumentRels = new DOMDocument('1.0', 'UTF-8');
+	$wordDocumentRels->load($documentFolder . '/word/_rels/document.xml.rels');
 	$wordDocument->documentElement->appendChild($wordDocument->importNode($wordDocumentRels->documentElement, true));
 
 	$xml = $wordDocument->saveXML();
 
 	// libxml < 2.7 fix
-	$xml = str_replace("r:id=", "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" r:id=", $xml);
-	$xml = str_replace("r:embed=", "xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" r:embed=", $xml);
+	$xml = str_replace('r:id=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
+	$xml = str_replace('r:embed=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed=', $xml);
 
-	$mainDocument = new DOMDocument("1.0", "UTF-8");
+	$mainDocument = new DOMDocument('1.0', 'UTF-8');
 	$mainDocument->loadXML($xml);
 
 	if ($debugDumpWord) {
@@ -141,7 +141,7 @@ function docx2md($args) {
 	// Step 3: Convert the bulk of the docx XML to an intermediary format
 	//==========================================================================
 
-	$xslDocument = new DOMDocument("1.0", "UTF-8");
+	$xslDocument = new DOMDocument('1.0', 'UTF-8');
 	$xslDocument->loadXML(DOCX_TO_INTERMEDIARY_TRANSFORM);
 
 	$processor = new XSLTProcessor();
@@ -156,11 +156,11 @@ function docx2md($args) {
 
 	$xml = $intermediaryDocument->saveXML();
 
-	$tags = array("i:para", "i:heading", "i:listitem");
+	$tags = array('i:para', 'i:heading', 'i:listitem');
 
 	foreach ($tags as $tag) {
 		// Remove any number of spaces that follow the opening tag
-		$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", "\\1", $xml);
+		$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", '\\1', $xml);
 
 		// Remove a single space that precedes the closing tag
 		$xml = str_replace(" </{$tag}>", "</{$tag}>", $xml);
@@ -179,7 +179,7 @@ function docx2md($args) {
 	// Step 5: Convert from the intermediary XML format to Markdown
 	//==========================================================================
 
-	$xslDocument = new DOMDocument("1.0", "UTF-8");
+	$xslDocument = new DOMDocument('1.0', 'UTF-8');
 	if ($includeImages) {
 		// Replace image placeholder with image template
 		$imageTemplate = sprintf(IMAGE_TEMPLATE, $imageFolder, basename($mdFilename, '.md'));
@@ -225,7 +225,7 @@ function extractFolder($zip, $folderName, $destination, $imageFolder = null, $md
 			if (!is_null($imageFolder) && !is_null($mdFilename)) {
 				// Save matching images to disk
 				if (preg_match('([^\s]+(\.(?i)(bmp|gif|jpe?g|png))$)', $fileName)) {
-					file_put_contents("$imageFolder/" . basename($mdFilename, '.md') . '.' . basename($fileName), $zip->getFromIndex($i));
+					file_put_contents("{$imageFolder}/" . basename($mdFilename, '.md') . '.' . basename($fileName), $zip->getFromIndex($i));
 				}
 			}
 
@@ -235,7 +235,7 @@ function extractFolder($zip, $folderName, $destination, $imageFolder = null, $md
 }
 
 function rrmdir($dir) {
-	foreach(glob($dir . "/*") as $file) {
+	foreach(glob($dir . '/*') as $file) {
 		if(is_dir($file)) {
 			rrmdir($file);
 		} else {
@@ -250,7 +250,7 @@ function rrmdir($dir) {
 // XSL Stylesheets
 //==============================================================================
 
-define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
+define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 <?xml version="1.0"?>
 <xsl:stylesheet version="1.0"
 	xmlns:i="urn:docx2md:intermediary"
@@ -319,19 +319,19 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 		<xsl:apply-templates />
 	</xsl:template>
 	<xsl:template match="w:r[w:rPr/w:b and not(w:rPr/w:i)]/w:t">
-		<!-- bold -->
+		<!-- Bold -->
 		<i:bold><xsl:value-of select="." /></i:bold>
 	</xsl:template>
 	<xsl:template match="w:r[w:rPr/w:i and not(w:rPr/w:b)]/w:t">
-		<!-- italic -->
+		<!-- Italic -->
 		<i:italic><xsl:value-of select="." /></i:italic>
 	</xsl:template>
 	<xsl:template match="w:r[w:rPr/w:i and w:rPr/w:b]/w:t">
-		<!-- bold + italic -->
 		<i:italic><i:bold><xsl:value-of select="." /></i:bold></i:italic>
+		<!-- Bold + Italic -->
 	</xsl:template>
 	<xsl:template match="w:t">
-		<!-- normal -->
+		<!-- Normal -->
 		<xsl:value-of select="." />
 	</xsl:template>
 	<xsl:template match="w:br">
@@ -376,7 +376,7 @@ define("DOCX_TO_INTERMEDIARY_TRANSFORM", <<<'XML'
 XML
 );
 
-define("INTERMEDIARY_TO_MARKDOWN_TRANSFORM", <<<'XML'
+define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 <?xml version="1.0"?>
 <xsl:stylesheet version="1.0"
 	xmlns:i="urn:docx2md:intermediary"

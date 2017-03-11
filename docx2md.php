@@ -136,6 +136,8 @@ function docx2md(array $args) {
 	$xml = str_replace('r:id=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
 	$xml = str_replace('r:embed=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed=', $xml);
 
+	$xml = cleanData($xml);
+
 	$mainDocument = new DOMDocument(VERSION, ENCODING);
 	$mainDocument->loadXML($xml);
 
@@ -270,6 +272,26 @@ function rrmdir($directory) {
 	}
 
 	rmdir($directory);
+}
+
+/**
+ * Replace curly quotes and other special characters
+ * with their standard equivalents.
+ *
+ * @param  string $data
+ * @return string
+ */
+function cleanData($data){
+	$replacementChars = array("'", "'", '"', '"', '-', '--', '...');
+
+	// Replace UTF-8 characters
+	$cleanedData = str_replace(array("\xe2\x80\x98", "\xe2\x80\x99", "\xe2\x80\x9c", "\xe2\x80\x9d", "\xe2\x80\x93", "\xe2\x80\x94", "\xe2\x80\xa6"), $replacementChars, $data);
+
+	// Replace Windows-1252 equivalents
+	// Replacement of horizontal ellipsis - chr(133) - as it interferes with 'A with circle' char
+	$cleanedData = str_replace(array(chr(145), chr(146), chr(147), chr(148), chr(150), chr(151), chr(133)), $replacementChars, $cleanedData);
+
+	return $cleanedData;
 }
 
 //==============================================================================

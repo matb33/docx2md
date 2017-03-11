@@ -7,7 +7,13 @@ if (PHP_SAPI !== 'cli') {
 const VERSION  = '1.0';
 const ENCODING = 'UTF-8';
 
-function docx2md($args) {
+/**
+ * Convert a .docx file to markdown using the given command-line arguments
+ *
+ * @param  array $args
+ * @return void
+ */
+function docx2md(array $args) {
 	$debugDumpWord = false;
 	$debugDumpIntermediary = false;
 
@@ -217,9 +223,20 @@ function docx2md($args) {
 }
 
 //==============================================================================
-// Support functions
+// Helper functions
 //==============================================================================
 
+/**
+ * Extract the files from a given zipped folder.
+ * Optionally this includes all images.
+ *
+ * @param  string $zip
+ * @param  string $folderName
+ * @param  string $destination
+ * @param  string $imageFolder
+ * @param  string $mdFilename
+ * @return void
+ */
 function extractFolder($zip, $folderName, $destination, $imageFolder = null, $mdFilename = null) {
 	for ($i = 0; $i < $zip->numFiles; $i++) {
 		$fileName = $zip->getNameIndex($i);
@@ -237,16 +254,22 @@ function extractFolder($zip, $folderName, $destination, $imageFolder = null, $md
 	}
 }
 
-function rrmdir($dir) {
-	foreach(glob($dir . '/*') as $file) {
-		if(is_dir($file)) {
+/**
+ * Recursively remove directories.
+ *
+ * @param  string $directory
+ * @return void
+ */
+function rrmdir($directory) {
+	foreach (glob($directory . '/*') as $file) {
+		if (is_dir($file)) {
 			rrmdir($file);
 		} else {
 			unlink($file);
 		}
 	}
 
-	rmdir($dir);
+	rmdir($directory);
 }
 
 //==============================================================================

@@ -391,9 +391,9 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 	</xsl:template>
 
 	<!-- Complete hyperlinks -->
-	<xsl:template match="w:hyperlink">
-		<xsl:variable name="id" select="@r:id" />
-		<xsl:if test="count(w:r)">
+	<xsl:template match="w:p[w:hyperlink]">
+		<xsl:variable name="id" select="w:hyperlink/@r:id" />
+		<xsl:if test="count(w:hyperlink/w:r)">
 			<i:link>
 				<xsl:attribute name="href"><xsl:value-of select="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@Target" /></xsl:attribute>
 				<xsl:if test="/w:document/rels:Relationships/rels:Relationship[@Id=$id]/@TargetMode">

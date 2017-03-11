@@ -374,9 +374,9 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 		<!-- Italic -->
 		<i:italic><xsl:value-of select="." /></i:italic>
 	</xsl:template>
-	<xsl:template match="w:r[w:rPr/w:i and w:rPr/w:b]/w:t">
-		<i:italic><i:bold><xsl:value-of select="." /></i:bold></i:italic>
+	<xsl:template match="w:r[w:rPr/w:b and w:rPr/w:i]/w:t">
 		<!-- Bold + Italic -->
+		<i:bold><i:italic><xsl:value-of select="." /></i:italic></i:bold>
 	</xsl:template>
 	<xsl:template match="w:t">
 		<!-- Normal -->
@@ -447,9 +447,9 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 
 	<xsl:template match="i:link"><xsl:text>[</xsl:text><xsl:value-of select="." /><xsl:text>][</xsl:text><xsl:value-of select="count(preceding::i:link) + 1" /><xsl:text>]</xsl:text></xsl:template>
 
-	<xsl:template match="i:italic"><xsl:text>*</xsl:text><xsl:apply-templates /><xsl:text>*</xsl:text></xsl:template>
+	<xsl:template match="i:italic"><xsl:text>_</xsl:text><xsl:apply-templates /><xsl:text>_</xsl:text></xsl:template>
 
-	<xsl:template match="i:bold"><xsl:text>__</xsl:text><xsl:apply-templates /><xsl:text>__</xsl:text></xsl:template>
+	<xsl:template match="i:bold"><xsl:text>**</xsl:text><xsl:apply-templates /><xsl:text>**</xsl:text></xsl:template>
 
 	<xsl:template match="i:para"><xsl:if test="./* or text() != ''"><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
 

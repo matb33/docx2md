@@ -397,6 +397,31 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 		</xsl:if>
 	</xsl:template>
 
+	<!-- Table -->
+	<xsl:template match="w:tbl">
+		<i:table><xsl:apply-templates /></i:table>
+	</xsl:template>
+	<!-- Table: row -->
+	<xsl:template match="w:tbl/w:tr">
+		<xsl:if test="count(w:tc) and position() &lt; 4">
+			<i:header><xsl:apply-templates /></i:header>
+		</xsl:if>
+		<xsl:if test="count(w:tc) and position() &gt; 3">
+			<i:row><xsl:apply-templates /></i:row>
+		</xsl:if>
+	</xsl:template>
+	<!-- Table: cell -->
+	<xsl:template match="w:tbl/w:tr/w:tc">
+		<xsl:if test="count(w:p/w:r/w:t)">
+			<i:cell><xsl:apply-templates /></i:cell>
+		</xsl:if>
+
+		<!-- Table: blank cells -->
+		<xsl:if test="count(w:p/w:r/w:t) &lt; 1">
+			<i:cell>-</i:cell>
+		</xsl:if>
+	</xsl:template>
+
 	<!-- List items -->
 	<xsl:template match="w:p[w:pPr/w:numPr]">
 		<xsl:if test="count(w:r)">
@@ -512,13 +537,49 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 	<xsl:template match="i:para">
         <xsl:if test="./* or text() != ''">
             <xsl:apply-templates />
-            <xsl:text>&#xa;&#xa;</xsl:text>
+            <xsl:if test="not(parent::i:cell)">
+                <xsl:text>&#xa;&#xa;</xsl:text>
+            </xsl:if>
         </xsl:if>
     </xsl:template>
 
 	<xsl:template match="i:line"><xsl:text>---&#xa;&#xa;</xsl:text></xsl:template>
 
 	<xsl:template match="i:linebreak"><xsl:text>&#xa;</xsl:text></xsl:template>
+
+	<xsl:template match="i:table">
+		<xsl:apply-templates />
+        <xsl:text>&#xa;&#xa;</xsl:text>
+	</xsl:template>
+	<xsl:template match="i:header">
+		<xsl:apply-templates />
+		<xsl:variable name="count" select="count(../i:row/i:cell)" />
+		<xsl:if test="$count &gt; 0">
+			<xsl:text>&#xa;| </xsl:text>
+			<xsl:call-template name="string-repeat">
+				<xsl:with-param name="string" select="'--- | '" />
+				<xsl:with-param name="times" select="count(i:cell)" />
+			</xsl:call-template>
+		</xsl:if>
+	</xsl:template>
+	<xsl:template match="i:row">
+		<xsl:text>&#xa;</xsl:text>
+		<xsl:apply-templates />
+	</xsl:template>
+	<xsl:template match="i:cell">
+		<xsl:variable name="count" select="count(../../i:row/i:cell)" />
+		<xsl:if test="$count = 0">
+			<xsl:apply-templates />
+			<xsl:text>&#xa;&#xa;</xsl:text>
+		</xsl:if>
+		<xsl:if test="$count &gt; 0">
+			<xsl:if test="position() = 1">
+				<xsl:text>| </xsl:text>
+			</xsl:if>
+			<xsl:apply-templates />
+			<xsl:text> | </xsl:text>
+		</xsl:if>
+	</xsl:template>
 
 	<!-- Bulleted list-item -->
 	<xsl:template match="i:listitem[@type!='2']"><xsl:value-of select="substring('		  ', 1, @level * 2)" /><xsl:text> - </xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
@@ -567,6 +628,20 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
                 <xsl:value-of select="$text" />
             </xsl:otherwise>
 		</xsl:choose>
+	</xsl:template>
+
+	<!-- Helper: string repeat -->
+	<xsl:template name="string-repeat">
+		<xsl:param name="string" select="''" />
+		<xsl:param name="times" select="1" />
+
+		<xsl:if test="number($times) &gt; 0">
+			<xsl:value-of select="$string" />
+			<xsl:call-template name="string-repeat">
+				<xsl:with-param name="string" select="$string" />
+				<xsl:with-param name="times" select="$times - 1" />
+			</xsl:call-template>
+		</xsl:if>
 	</xsl:template>
 </xsl:stylesheet>
 XML

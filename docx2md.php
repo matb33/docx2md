@@ -378,7 +378,9 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 		<xsl:if test="count(w:r)">
 			<i:heading>
 				<xsl:attribute name="level"><xsl:value-of select="$level" /></xsl:attribute>
-				<xsl:if test="$type != ''"><xsl:attribute name="type"><xsl:value-of select="$type" /></xsl:attribute></xsl:if>
+				<xsl:if test="$type != ''">
+                    <xsl:attribute name="type"><xsl:value-of select="$type" /></xsl:attribute>
+                </xsl:if>
 				<xsl:apply-templates />
 			</i:heading>
 		</xsl:if>
@@ -507,7 +509,12 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 
 	<xsl:template match="i:strikethrough"><xsl:text>~~</xsl:text><xsl:apply-templates /><xsl:text>~~</xsl:text></xsl:template>
 
-	<xsl:template match="i:para"><xsl:if test="./* or text() != ''"><xsl:apply-templates /><xsl:text>&#xa;&#xa;</xsl:text></xsl:if></xsl:template>
+	<xsl:template match="i:para">
+        <xsl:if test="./* or text() != ''">
+            <xsl:apply-templates />
+            <xsl:text>&#xa;&#xa;</xsl:text>
+        </xsl:if>
+    </xsl:template>
 
 	<xsl:template match="i:line"><xsl:text>---&#xa;&#xa;</xsl:text></xsl:template>
 

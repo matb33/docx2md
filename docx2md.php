@@ -282,14 +282,14 @@ function rrmdir($directory) {
  * @return string
  */
 function cleanData($data){
-	$replacementChars = array("'", "'", '"', '"', '-', '--', '...');
+	$replacementChars = array("'", "'", '"', '"', '-', '--', '...', ' ');
 
 	// Replace UTF-8 characters
-	$cleanedData = str_replace(array("\xe2\x80\x98", "\xe2\x80\x99", "\xe2\x80\x9c", "\xe2\x80\x9d", "\xe2\x80\x93", "\xe2\x80\x94", "\xe2\x80\xa6"), $replacementChars, $data);
+	$cleanedData = str_replace(array("\xe2\x80\x98", "\xe2\x80\x99", "\xe2\x80\x9c", "\xe2\x80\x9d", "\xe2\x80\x93", "\xe2\x80\x94", "\xe2\x80\xa6", "\xc2\xa0"), $replacementChars, $data);
 
 	// Replace Windows-1252 equivalents
 	// Replacement of horizontal ellipsis - chr(133) - as it interferes with 'A with circle' char
-	$cleanedData = str_replace(array(chr(145), chr(146), chr(147), chr(148), chr(150), chr(151), chr(133)), $replacementChars, $cleanedData);
+	$cleanedData = str_replace(array(chr(145), chr(146), chr(147), chr(148), chr(150), chr(151), chr(133), chr(194)), $replacementChars, $cleanedData);
 
 	return $cleanedData;
 }

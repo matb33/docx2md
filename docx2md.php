@@ -302,13 +302,13 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 <?xml version="1.0"?>
 <xsl:stylesheet version="1.0"
 	xmlns:i="urn:docx2md:intermediary"
-	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-	xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+	xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+	xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
 	xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 	xmlns:rels="http://schemas.openxmlformats.org/package/2006/relationships"
-	xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+	xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 	xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
-	xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties">
+	xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
 	<xsl:template match="/w:document">
 		<i:document>
@@ -494,18 +494,25 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 		</xsl:call-template>
 	</xsl:template>
 
-	<!-- Utility string replace -->
+	<!-- Helper: string replace -->
 	<xsl:template name="string-replace-all">
 		<xsl:param name="text" />
 		<xsl:param name="replace" />
 		<xsl:param name="by" />
 		<xsl:choose>
-			<xsl:when test="contains($text, $replace)"><xsl:value-of select="substring-before($text, $replace)" /><xsl:value-of select="$by" /><xsl:call-template name="string-replace-all">
-				<xsl:with-param name="text" select="substring-after($text, $replace)" />
-				<xsl:with-param name="replace" select="$replace" />
-				<xsl:with-param name="by" select="$by" />
-			</xsl:call-template></xsl:when>
-			<xsl:otherwise><xsl:value-of select="$text" /></xsl:otherwise>
+			<xsl:when test="contains($text, $replace)">
+                <xsl:value-of select="substring-before($text, $replace)" />
+                <xsl:value-of select="$by" />
+
+                <xsl:call-template name="string-replace-all">
+                    <xsl:with-param name="text" select="substring-after($text, $replace)" />
+                    <xsl:with-param name="replace" select="$replace" />
+                    <xsl:with-param name="by" select="$by" />
+                </xsl:call-template>
+            </xsl:when>
+			<xsl:otherwise>
+                <xsl:value-of select="$text" />
+            </xsl:otherwise>
 		</xsl:choose>
 	</xsl:template>
 </xsl:stylesheet>

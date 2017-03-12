@@ -1,4 +1,5 @@
 *.docx
 *.md
+*.md.*
 *.tmp
 !README.md

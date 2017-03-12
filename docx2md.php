@@ -451,7 +451,7 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 
 	<xsl:template match="i:body"><xsl:apply-templates /></xsl:template>
 
-	<xsl:template match="i:heading"><xsl:value-of select="substring('######', 1, @level)" /><xsl:text>&#32;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:text>&#xa;</xsl:text></xsl:template>
+	<xsl:template match="i:heading"><xsl:value-of select="substring('######', 1, @level)" /><xsl:text>&#32;</xsl:text><xsl:apply-templates /><xsl:text>&#xa;&#xa;</xsl:text></xsl:template>
 
 	<xsl:template match="i:link"><xsl:text>[</xsl:text><xsl:value-of select="." /><xsl:text>][</xsl:text><xsl:value-of select="count(preceding::i:link) + 1" /><xsl:text>]</xsl:text></xsl:template>
 
@@ -461,7 +461,7 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 
 	<xsl:template match="i:strikethrough"><xsl:text>~~</xsl:text><xsl:apply-templates /><xsl:text>~~</xsl:text></xsl:template>
 
-	<xsl:template match="i:para"><xsl:if test="./* or text() != ''"><xsl:apply-templates /><xsl:text>&#xa;</xsl:text><xsl:text>&#xa;</xsl:text></xsl:if></xsl:template>
+	<xsl:template match="i:para"><xsl:if test="./* or text() != ''"><xsl:apply-templates /><xsl:text>&#xa;&#xa;</xsl:text></xsl:if></xsl:template>
 
 	<xsl:template match="i:line"><xsl:text>---&#xa;&#xa;</xsl:text></xsl:template>
 

@@ -136,8 +136,6 @@ function docx2md(array $args) {
 	$xml = str_replace('r:id=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
 	$xml = str_replace('r:embed=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed=', $xml);
 
-	$xml = cleanData($xml);
-
 	$mainDocument = new DOMDocument(VERSION, ENCODING);
 	$mainDocument->loadXML($xml);
 
@@ -160,24 +158,72 @@ function docx2md(array $args) {
 	$intermediaryDocument = $processor->transformToDoc($mainDocument);
 
 	//==========================================================================
-	// Step 4: Use string functions to trim away unwanted whitespace in very
-	// specific places. We do this using string manipulation for increased
-	// control over exactly how we target and trim this whitespace
+	// Step 4: Use string functions to trim away unwanted whitespace in
+	// specific places. Use DOMXPath to iterate through specific tags and
+    // clean the data
 	//==========================================================================
 
 	$xml = $intermediaryDocument->saveXML();
 
-	$tags = array('i:para', 'i:heading', 'i:listitem');
+	$displayTags = array('i:para', 'i:heading', 'i:listitem');
 
-	foreach ($tags as $tag) {
+	foreach ($displayTags as $tag) {
 		// Remove any number of spaces that follow the opening tag
-		$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", '\\1', $xml);
+		$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", ' \\1', $xml);
 
-		// Remove a single space that precedes the closing tag
-		$xml = str_replace(" </{$tag}>", "</{$tag}>", $xml);
+		// Remove multiple spaces before closing tags
+		$xml = preg_replace("/[ ]*<\/{$tag}>/", "</{$tag}>", $xml);
 	}
 
+	$formattingTags = array('i:bold', 'i:italic', 'i:strikethrough', 'i:line');
+
+	foreach ($formattingTags as $tag) {
+		// Convert parallel repeated tags to single instance
+		// e.g. `<i:x>foo</i:x><i:x>bar</i:x>` to `<i:x>foo bar</i:x>`
+		$xml = preg_replace("/(<\/{$tag}>)[ ]*<{$tag}>/", ' ', $xml);
+
+		// Remove any number of spaces that follow the opening tag
+		$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", ' \\1', $xml);
+
+		// Remove multiple spaces before closing tags
+		$xml = preg_replace("/[ ]*<\/{$tag}>/", "</{$tag}>", $xml);
+	}
+
+    // Remove white spaces between tags
+    $xml = preg_replace('/(\>)\s*(\<)/m', '$1$2', $xml);
+
 	$intermediaryDocument->loadXML($xml);
+
+	// Remove empty tags
+	$xpath = new DOMXPath($intermediaryDocument);
+	while (($nodes = $xpath->query('//*[not(*) and not(\'i:image\') and not(text()[normalize-space()])]')) && ($nodes->length)) {
+		foreach ($nodes as $node) {
+            $node->parentNode->removeChild($node);
+		}
+	}
+
+	$allTags = array_merge($displayTags, $formattingTags);
+
+	foreach ($allTags as $tag) {
+        foreach ($xpath->query("//{$tag}/text()") as $textNode) {
+            $output = $textNode->nodeValue;
+
+            // Cleanse data
+            $output = cleanData($output);
+
+            // Replace multiple spaces with a single space
+            $output = preg_replace('!\s+!', ' ', $output);
+
+            // Remove spaces preceding punctuation
+            $output = preg_replace('/\s*([\.,\?\!])/', '\\1', $output);
+
+            // Escape existing chars used in markdown as formatting
+            $output = addcslashes($output, '*_~`');
+
+            // Assign result
+            $textNode->nodeValue = $output;
+        }
+    }
 
 	if ($debugDumpIntermediary) {
 		$intermediaryDocument->preserveWhiteSpace = false;

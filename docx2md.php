@@ -160,7 +160,7 @@ function docx2md(array $args) {
 	//==========================================================================
 	// Step 4: Use string functions to trim away unwanted whitespace in
 	// specific places. Use DOMXPath to iterate through specific tags and
-    // clean the data
+	// clean the data
 	//==========================================================================
 
 	$xml = $intermediaryDocument->saveXML();
@@ -189,8 +189,8 @@ function docx2md(array $args) {
 		$xml = preg_replace("/[ ]*<\/{$tag}>/", "</{$tag}>", $xml);
 	}
 
-    // Remove white spaces between tags
-    $xml = preg_replace('/(\>)\s*(\<)/m', '$1$2', $xml);
+	// Remove white spaces between tags
+	$xml = preg_replace('/(\>)\s*(\<)/m', '$1$2', $xml);
 
 	$intermediaryDocument->loadXML($xml);
 
@@ -198,32 +198,32 @@ function docx2md(array $args) {
 	$xpath = new DOMXPath($intermediaryDocument);
 	while (($nodes = $xpath->query('//*[not(*) and not(\'i:image\') and not(text()[normalize-space()])]')) && ($nodes->length)) {
 		foreach ($nodes as $node) {
-            $node->parentNode->removeChild($node);
+			$node->parentNode->removeChild($node);
 		}
 	}
 
 	$allTags = array_merge($displayTags, $formattingTags);
 
 	foreach ($allTags as $tag) {
-        foreach ($xpath->query("//{$tag}/text()") as $textNode) {
-            $output = $textNode->nodeValue;
+		foreach ($xpath->query("//{$tag}/text()") as $textNode) {
+			$output = $textNode->nodeValue;
 
-            // Cleanse data
-            $output = cleanData($output);
+			// Cleanse data
+			$output = cleanData($output);
 
-            // Replace multiple spaces with a single space
-            $output = preg_replace('!\s+!', ' ', $output);
+			// Replace multiple spaces with a single space
+			$output = preg_replace('!\s+!', ' ', $output);
 
-            // Remove spaces preceding punctuation
-            $output = preg_replace('/\s*([\.,\?\!])/', '\\1', $output);
+			// Remove spaces preceding punctuation
+			$output = preg_replace('/\s*([\.,\?\!])/', '\\1', $output);
 
-            // Escape existing chars used in markdown as formatting
-            $output = addcslashes($output, '*_~`');
+			// Escape existing chars used in markdown as formatting
+			$output = addcslashes($output, '*_~`');
 
-            // Assign result
-            $textNode->nodeValue = $output;
-        }
-    }
+			// Assign result
+			$textNode->nodeValue = $output;
+		}
+	}
 
 	if ($debugDumpIntermediary) {
 		$intermediaryDocument->preserveWhiteSpace = false;
@@ -379,8 +379,8 @@ define('DOCX_TO_INTERMEDIARY_TRANSFORM', <<<'XML'
 			<i:heading>
 				<xsl:attribute name="level"><xsl:value-of select="$level" /></xsl:attribute>
 				<xsl:if test="$type != ''">
-                    <xsl:attribute name="type"><xsl:value-of select="$type" /></xsl:attribute>
-                </xsl:if>
+					<xsl:attribute name="type"><xsl:value-of select="$type" /></xsl:attribute>
+				</xsl:if>
 				<xsl:apply-templates />
 			</i:heading>
 		</xsl:if>
@@ -535,13 +535,13 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 	<xsl:template match="i:strikethrough"><xsl:text>~~</xsl:text><xsl:apply-templates /><xsl:text>~~</xsl:text></xsl:template>
 
 	<xsl:template match="i:para">
-        <xsl:if test="./* or text() != ''">
-            <xsl:apply-templates />
-            <xsl:if test="not(parent::i:cell)">
-                <xsl:text>&#xa;&#xa;</xsl:text>
-            </xsl:if>
-        </xsl:if>
-    </xsl:template>
+		<xsl:if test="./* or text() != ''">
+			<xsl:apply-templates />
+			<xsl:if test="not(parent::i:cell)">
+				<xsl:text>&#xa;&#xa;</xsl:text>
+			</xsl:if>
+		</xsl:if>
+	</xsl:template>
 
 	<xsl:template match="i:line"><xsl:text>---&#xa;&#xa;</xsl:text></xsl:template>
 
@@ -549,7 +549,7 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 
 	<xsl:template match="i:table">
 		<xsl:apply-templates />
-        <xsl:text>&#xa;&#xa;</xsl:text>
+		<xsl:text>&#xa;&#xa;</xsl:text>
 	</xsl:template>
 	<xsl:template match="i:header">
 		<xsl:apply-templates />
@@ -615,18 +615,18 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 		<xsl:param name="by" />
 		<xsl:choose>
 			<xsl:when test="contains($text, $replace)">
-                <xsl:value-of select="substring-before($text, $replace)" />
-                <xsl:value-of select="$by" />
+				<xsl:value-of select="substring-before($text, $replace)" />
+				<xsl:value-of select="$by" />
 
-                <xsl:call-template name="string-replace-all">
-                    <xsl:with-param name="text" select="substring-after($text, $replace)" />
-                    <xsl:with-param name="replace" select="$replace" />
-                    <xsl:with-param name="by" select="$by" />
-                </xsl:call-template>
-            </xsl:when>
+				<xsl:call-template name="string-replace-all">
+					<xsl:with-param name="text" select="substring-after($text, $replace)" />
+					<xsl:with-param name="replace" select="$replace" />
+					<xsl:with-param name="by" select="$by" />
+				</xsl:call-template>
+			</xsl:when>
 			<xsl:otherwise>
-                <xsl:value-of select="$text" />
-            </xsl:otherwise>
+				<xsl:value-of select="$text" />
+			</xsl:otherwise>
 		</xsl:choose>
 	</xsl:template>
 

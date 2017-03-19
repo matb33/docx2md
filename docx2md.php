@@ -10,21 +10,34 @@ const ENCODING = 'UTF-8';
 /**
  * Convert a .docx file to markdown using the given command-line arguments
  *
- * @param  array $args
- * @return void
+ * @param  array   $args
+ * @param  boolean $isTestMode
+ * @return string
  */
-function docx2md(array $args) {
-	$debugDumpWord = false;
+function docx2md(array $args, $isTestMode = false) {
+	$debugDumpWord         = false;
 	$debugDumpIntermediary = false;
 
-	// Check command line options for including images: -i, --image
-	$imageLongOption = array('image');
-	$imageShortOption = $imageLongOption[0][0]; // First letter of *i*mage
-	$options = getopt($imageShortOption, $imageLongOption);
+	// Set command-line to use utf-8
+	shell_exec('chcp 65001');
 
-	$includeImages = false;
-	if (array_key_exists($imageShortOption, $options) || array_key_exists($imageLongOption[0], $options)) {
-		$includeImages = true;
+	// Check command line options
+	$longOptionsArray = array('image', 'test');
+
+	$shortOptionsArray = array_map(function ($value) {
+		return substr($value, 0, 1);
+	}, $longOptionsArray);
+	$shortOptions = implode($shortOptionsArray);
+
+	$options = getopt($shortOptions, $longOptionsArray);
+
+	foreach ($longOptionsArray as $index => $longOption) {
+		${'option' . ucfirst($longOption)} = false;
+		${$longOption . 'Options'} = array($shortOptionsArray[$index], $longOptionsArray[$index], "-{$shortOptionsArray[$index]}", "--{$longOptionsArray[$index]}");
+
+		if (array_key_exists(${$longOption . 'Options'}[0], $options) || array_key_exists(${$longOption . 'Options'}[1], $options) || array_intersect($args, ${$longOption . 'Options'})) {
+			${'option' . ucfirst($longOption)} = true;
+		}
 	}
 
 	// Remove first argument: the script name
@@ -36,20 +49,35 @@ function docx2md(array $args) {
 	// Re-index the array
 	$args = array_values($args);
 
+
 	if (count($args) <= 0) {
-		echo "docx2md: Written by Mathieu Bouchard @matb33\n";
-		echo "Converts MS Word .docx files to Markdown format.\n";
-		echo "\n";
-		echo "Usage: php ./docx2md.php [options] input.docx [output.md]\n";
-		echo "\n";
-		echo 'Options:';
-		echo "\n";
-		echo '  -i, --image Include images';
-		echo "\n";
-		echo "\n";
-		echo 'If no output file is specified, writes to STDOUT excluding images.';
-		echo "\n";
-		exit();
+		// If option is set and not already in test mode
+		// run tests and *stop*
+		if ($optionTest && !$isTestMode) {
+			return runTests($args);
+		}
+
+		$output  = 'Converts Micro$oft Word .docx files to Markdown format.' . PHP_EOL;
+		$output .= 'docx2md is written by Mathieu Bouchard (@matb33).' . PHP_EOL;
+		$output .= PHP_EOL;
+		$output .= 'Usage: php ./docx2md.php [options] [source.docx] [destination.md]' . PHP_EOL;
+		$output .= PHP_EOL;
+		$output .= 'Options:';
+		$output .= PHP_EOL;
+		$output .= '  -i, --image Parse images';
+		$output .= PHP_EOL;
+		$output .= '  -t, --test  Run tests';
+		$output .= PHP_EOL;
+		$output .= PHP_EOL;
+		$output .= 'If no destination file is specified, output will be written to the console excluding any images.';
+		$output .= PHP_EOL;
+		die($output);
+	} else if (!$debugDumpWord && !$debugDumpIntermediary) {
+		// If option is set and not already in test mode
+		// run tests and *continue on* with converting
+		if ($optionTest && !$isTestMode) {
+			runTests($args);
+		}
 	}
 
 	//==========================================================================
@@ -65,19 +93,16 @@ function docx2md(array $args) {
 
 	if (array_key_exists(1, $args) && $args[1] !== '') {
 		$mdFilename = $args[1];
-	} else {
-		// Override including images as no output filename has been provided
-		$includeImages = false;
 	}
 
 	if (!file_exists($docxFilename)) {
-		die('Input .docx file does not exist: ' . $docxFilename . "\n");
+		die("Input .docx file does not exist: \"{$docxFilename}\"");
 	} else {
 		$docxFilename = realpath($docxFilename);
 	}
 
 	// Generate a random extension so as not to overwrite destination filename
-	if ($mdFilename !== null && file_exists($mdFilename)) {
+	if (!$isTestMode && $mdFilename !== null && file_exists($mdFilename)) {
 		$mdFilename = $mdFilename . '.' . substr(md5(uniqid(rand(), true)), 0, 5);
 	}
 
@@ -94,7 +119,7 @@ function docx2md(array $args) {
 
 	$imageFolder = 'images';
 
-	if ($includeImages) {
+	if ($optionImage) {
 		// Clean-up existing images only associated with the defined markdown file
 		$images = glob("{$imageFolder}/" . basename($mdFilename, '.md') . '.*.{bmp,gif,jpg,jpeg,png}', GLOB_BRACE);
 		foreach ($images as $image) {
@@ -108,7 +133,7 @@ function docx2md(array $args) {
 	$res = $zip->open($docxFilename);
 
 	if ($res === true) {
-		if ($includeImages) {
+		if (!$isTestMode && $optionImage) {
 			extractFolder($zip, 'word/media', $documentFolder, $imageFolder, $mdFilename);
 		} else {
 			extractFolder($zip, 'word/media', $documentFolder);
@@ -116,7 +141,7 @@ function docx2md(array $args) {
 		$zip->extractTo($documentFolder, array('word/document.xml', 'word/_rels/document.xml.rels', 'docProps/core.xml'));
 		$zip->close();
 	} else {
-		die("The .docx file appears to be corrupt (i.e. it can't be opened using Zip). Please try re-saving your document and re-uploading, or ensuring that you are providing a valid .docx file.\n");
+		die("The .docx file appears to be corrupt (i.e. it can't be opened using Zip). Please try re-saving your document and re-uploading, or ensuring that you are providing a valid .docx file.");
 	}
 
 	//==========================================================================
@@ -142,8 +167,7 @@ function docx2md(array $args) {
 	if ($debugDumpWord) {
 		$mainDocument->preserveWhiteSpace = false;
 		$mainDocument->formatOutput = true;
-		echo $mainDocument->saveXML();
-		exit();
+		die($mainDocument->saveXML());
 	}
 
 	//==========================================================================
@@ -228,8 +252,7 @@ function docx2md(array $args) {
 	if ($debugDumpIntermediary) {
 		$intermediaryDocument->preserveWhiteSpace = false;
 		$intermediaryDocument->formatOutput = true;
-		echo $intermediaryDocument->saveXML();
-		exit();
+		die($intermediaryDocument->saveXML());
 	}
 
 	//==========================================================================
@@ -237,9 +260,10 @@ function docx2md(array $args) {
 	//==========================================================================
 
 	$xslDocument = new DOMDocument(VERSION, ENCODING);
-	if ($includeImages) {
+	if ($optionImage) {
 		// Replace image placeholder with image template
-		$imageTemplate = sprintf(IMAGE_TEMPLATE, $imageFolder, basename($mdFilename, '.md'));
+		$imageFilename = ($mdFilename) ? basename($mdFilename, '.md') . '.' : null;
+		$imageTemplate = sprintf(IMAGE_TEMPLATE, $imageFolder, $imageFilename);
 		$xslDocument->loadXML(sprintf(INTERMEDIARY_TO_MARKDOWN_TRANSFORM, $imageTemplate));
 	} else {
 		// Replace image placeholder with a blank string
@@ -248,17 +272,33 @@ function docx2md(array $args) {
 
 	$processor = new XSLTProcessor();
 	$processor->importStyleSheet($xslDocument);
-	$markdown = rtrim($processor->transformToXml($intermediaryDocument));
+	$markdown = $processor->transformToXml($intermediaryDocument);
+	$markdown = rtrim(join(PHP_EOL, array_map('rtrim', explode("\n", $markdown))));
 
 	//==========================================================================
 	// Step 6: If the Markdown output file was specified, write it. Otherwise
 	// just write to STDOUT (echo)
 	//==========================================================================
 
-	if ($mdFilename !== null) {
-		file_put_contents($mdFilename, $markdown);
-	} else {
-		echo $markdown;
+	if (!$isTestMode) {
+		$formatter       = "%s \033[32m" . html_entity_decode('&radic;') . " \033[0m  ";
+		$completeMessage = 'Performing conversion... finished';
+
+		if ($optionImage) {
+			$completeMessage .= ' with images included';
+		}
+
+		echo sprintf($formatter, $completeMessage);
+
+		if ($mdFilename !== null) {
+			file_put_contents($mdFilename, $markdown);
+			echo PHP_EOL . " Created: \"{$mdFilename}\"";
+		} else {
+			echo PHP_EOL . PHP_EOL;
+			echo 'Markdown:' . PHP_EOL;
+			echo str_repeat('-', 9) . PHP_EOL;
+			echo $markdown;
+		}
 	}
 
 	//==========================================================================
@@ -268,6 +308,8 @@ function docx2md(array $args) {
 	if (file_exists($documentFolder)) {
 		rrmdir($documentFolder);
 	}
+
+	return $markdown;
 }
 
 //==============================================================================
@@ -338,6 +380,59 @@ function cleanData($data){
 	$cleanedData = str_replace(array(chr(145), chr(146), chr(147), chr(148), chr(150), chr(151), chr(133), chr(194)), $replacementChars, $cleanedData);
 
 	return $cleanedData;
+}
+
+/**
+ * Test markdown converter
+ *
+ * @param $args
+ * @return void
+ */
+function runTests($args){
+	$src       = 'examples';
+	$formatter = " %s. %s\033[0m: %s" . PHP_EOL;
+	$formatter = " %s. %s\033[0m: %s" . PHP_EOL;
+	$output    = "\033[0m";
+
+	echo 'Running tests...';
+
+	$files = glob("{$src}/docx/*.docx");
+	$size  = sizeof($files);
+	$charCount = 0;
+
+	foreach ($files as $n => $file1) {
+		$n++;
+		$file2 = basename($file1, '.docx') . '.md';
+
+		$markdown = docx2md(array('', '-i', $file1, $file2), true);
+		$md       = "{$src}/md/{$file2}";
+
+		$fileHash1 = sha1(preg_replace('/\v+/', PHP_EOL . PHP_EOL, $markdown));
+		$fileHash2 = sha1(preg_replace('/\v+/', PHP_EOL . PHP_EOL, file_get_contents($md)));
+
+		// Padding required on the last line to prevent
+		// miscellaneous characters printing to the console
+		if ($n === $size) {
+			$size++;
+			$file1 .= str_repeat(' ', ($size * 2));
+		}
+
+		if ($fileHash1 === $fileHash2) {
+			$sprintf = sprintf($formatter, $n, "\033[32mPassed " . html_entity_decode('&radic;'), $file1);
+		} else {
+			$sprintf = sprintf($formatter, $n, "\033[31mFailed " . html_entity_decode('&times;'), $file1);
+		}
+
+		$charCount = strlen(rtrim($sprintf));
+		$output   .= $sprintf;
+	}
+
+	echo ' finished' . " \033[32m" . html_entity_decode('&radic;') . " \033[0m" . PHP_EOL . rtrim($output, PHP_EOL);
+
+	if ($args) {
+		// If performing conversion after running tests, print a separator
+		echo PHP_EOL . str_repeat('_', $charCount) . PHP_EOL . PHP_EOL;
+	}
 }
 
 //==============================================================================
@@ -647,6 +742,6 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 XML
 );
 
-define('IMAGE_TEMPLATE', '<!-- Image --><xsl:template match="i:image"><xsl:text>![Image](%s/%s.</xsl:text><xsl:value-of select="str:tokenize(@src, \'/\')[last()]" /><xsl:text>)</xsl:text></xsl:template>');
+define('IMAGE_TEMPLATE', '<!-- Image --><xsl:template match="i:image"><xsl:text>![Image](%s/%s</xsl:text><xsl:value-of select="str:tokenize(@src, \'/\')[last()]" /><xsl:text>)&#xa;</xsl:text></xsl:template>');
 
 docx2md($argv);

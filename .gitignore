@@ -3,3 +3,4 @@
 *.md.*
 *.tmp
 !README.md
+!examples/**/*

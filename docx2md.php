@@ -60,7 +60,7 @@ function docx2md(array $args, $isTestMode = false) {
 		$output  = 'Converts Micro$oft Word .docx files to Markdown format.' . PHP_EOL;
 		$output .= 'docx2md is written by Mathieu Bouchard (@matb33).' . PHP_EOL;
 		$output .= PHP_EOL;
-		$output .= 'Usage: php ./docx2md.php [options] [source.docx] [destination.md]' . PHP_EOL;
+		$output .= 'Usage: php ./docx2md.php [options] [source.docx|path/to/dir] [destination.md|path/to/dir]' . PHP_EOL;
 		$output .= PHP_EOL;
 		$output .= 'Options:';
 		$output .= PHP_EOL;
@@ -96,217 +96,249 @@ function docx2md(array $args, $isTestMode = false) {
 	}
 
 	if (!file_exists($docxFilename)) {
-		die("Input .docx file does not exist: \"{$docxFilename}\"");
+		die("Input .docx file/directory does not exist: \"{$docxFilename}\"");
 	} else {
 		$docxFilename = realpath($docxFilename);
 	}
 
-	// Generate a random extension so as not to overwrite destination filename
-	if (!$isTestMode && $mdFilename !== null && file_exists($mdFilename)) {
-		$mdFilename = $mdFilename . '.' . substr(md5(uniqid(rand(), true)), 0, 5);
+	$isMultipleFiles = false;
+	if (is_dir($docxFilename)) {
+		$isMultipleFiles = true;
+		$sourceFiles = glob("{$docxFilename}\\*.docx");
+		$destination = realpath($mdFilename) . '\\';
+	} else {
+		$sourceFiles = glob($docxFilename);
+		$destination = realpath(dirname($docxFilename)) . '\\';
 	}
 
-	//==========================================================================
-	// Step 1: Extract Word doc to a temporary location and delete relevant images
-	//==========================================================================
-
-	$documentFolder = sys_get_temp_dir() . '/' . md5($docxFilename);
-
-	if (file_exists($documentFolder)) {
-		rrmdir($documentFolder);
-		mkdir($documentFolder);
-	}
-
-	$imageFolder = 'images';
-
-	if ($optionImage) {
-		// Clean-up existing images only associated with the defined markdown file
-		$images = glob("{$imageFolder}/" . basename($mdFilename, '.md') . '.*.{bmp,gif,jpg,jpeg,png}', GLOB_BRACE);
-		foreach ($images as $image) {
-			if (is_file($image)) {
-				unlink($image);
+	foreach ($sourceFiles as $index => $docxFilename) {
+		if (!$isTestMode && $mdFilename !== null) {
+			if ($isMultipleFiles) {
+				$mdFilename = basename($docxFilename, 'docx') . 'md';
+			} else if(file_exists($mdFilename)) {
+				// Generate a random extension so as not to overwrite destination filename
+				$mdFilename = $mdFilename . '.' . substr(md5(uniqid(rand(), true)), 0, 5);
 			}
 		}
-	}
 
-	$zip = new ZipArchive;
-	$res = $zip->open($docxFilename);
+		//==========================================================================
+		// Step 1: Extract Word doc to a temporary location and delete relevant images
+		//==========================================================================
 
-	if ($res === true) {
-		if (!$isTestMode && $optionImage) {
-			extractFolder($zip, 'word/media', $documentFolder, $imageFolder, $mdFilename);
-		} else {
-			extractFolder($zip, 'word/media', $documentFolder);
+		$documentFolder = sys_get_temp_dir() . '/' . md5($docxFilename);
+
+		if (file_exists($documentFolder)) {
+			rrmdir($documentFolder);
+			mkdir($documentFolder);
 		}
-		$zip->extractTo($documentFolder, array('word/document.xml', 'word/_rels/document.xml.rels', 'docProps/core.xml'));
-		$zip->close();
-	} else {
-		die("The .docx file appears to be corrupt (i.e. it can't be opened using Zip). Please try re-saving your document and re-uploading, or ensuring that you are providing a valid .docx file.");
-	}
-
-	//==========================================================================
-	// Step 2: Read the main document.xml and also bring in the rels document
-	//==========================================================================
-
-	$wordDocument = new DOMDocument(VERSION, ENCODING);
-	$wordDocument->load($documentFolder . '/word/document.xml');
-
-	$wordDocumentRels = new DOMDocument(VERSION, ENCODING);
-	$wordDocumentRels->load($documentFolder . '/word/_rels/document.xml.rels');
-	$wordDocument->documentElement->appendChild($wordDocument->importNode($wordDocumentRels->documentElement, true));
-
-	$xml = $wordDocument->saveXML();
-
-	// libxml < 2.7 fix
-	$xml = str_replace('r:id=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
-	$xml = str_replace('r:embed=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed=', $xml);
-
-	$mainDocument = new DOMDocument(VERSION, ENCODING);
-	$mainDocument->loadXML($xml);
-
-	if ($debugDumpWord) {
-		$mainDocument->preserveWhiteSpace = false;
-		$mainDocument->formatOutput = true;
-		die($mainDocument->saveXML());
-	}
-
-	//==========================================================================
-	// Step 3: Convert the bulk of the docx XML to an intermediary format
-	//==========================================================================
-
-	$xslDocument = new DOMDocument(VERSION, ENCODING);
-	$xslDocument->loadXML(DOCX_TO_INTERMEDIARY_TRANSFORM);
-
-	$processor = new XSLTProcessor();
-	$processor->importStyleSheet($xslDocument);
-	$intermediaryDocument = $processor->transformToDoc($mainDocument);
-
-	//==========================================================================
-	// Step 4: Use string functions to trim away unwanted whitespace in
-	// specific places. Use DOMXPath to iterate through specific tags and
-	// clean the data
-	//==========================================================================
-
-	$xml = $intermediaryDocument->saveXML();
-
-	$displayTags = array('i:para', 'i:heading', 'i:listitem');
-
-	foreach ($displayTags as $tag) {
-		// Remove any number of spaces that follow the opening tag
-		$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", ' \\1', $xml);
-
-		// Remove multiple spaces before closing tags
-		$xml = preg_replace("/[ ]*<\/{$tag}>/", "</{$tag}>", $xml);
-	}
-
-	$formattingTags = array('i:bold', 'i:italic', 'i:strikethrough', 'i:line');
-
-	foreach ($formattingTags as $tag) {
-		// Convert parallel repeated tags to single instance
-		// e.g. `<i:x>foo</i:x><i:x>bar</i:x>` to `<i:x>foo bar</i:x>`
-		$xml = preg_replace("/(<\/{$tag}>)[ ]*<{$tag}>/", ' ', $xml);
-
-		// Remove any number of spaces that follow the opening tag
-		$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", ' \\1', $xml);
-
-		// Remove multiple spaces before closing tags
-		$xml = preg_replace("/[ ]*<\/{$tag}>/", "</{$tag}>", $xml);
-	}
-
-	// Remove white spaces between tags
-	$xml = preg_replace('/(\>)\s*(\<)/m', '$1$2', $xml);
-
-	$intermediaryDocument->loadXML($xml);
-
-	// Remove empty tags
-	$xpath = new DOMXPath($intermediaryDocument);
-	while (($nodes = $xpath->query('//*[not(*) and not(\'i:image\') and not(text()[normalize-space()])]')) && ($nodes->length)) {
-		foreach ($nodes as $node) {
-			$node->parentNode->removeChild($node);
-		}
-	}
-
-	$allTags = array_merge($displayTags, $formattingTags);
-
-	foreach ($allTags as $tag) {
-		foreach ($xpath->query("//{$tag}/text()") as $textNode) {
-			$output = $textNode->nodeValue;
-
-			// Cleanse data
-			$output = cleanData($output);
-
-			// Replace multiple spaces with a single space
-			$output = preg_replace('!\s+!', ' ', $output);
-
-			// Remove spaces preceding punctuation
-			$output = preg_replace('/\s*([\.,\?\!])/', '\\1', $output);
-
-			// Escape existing chars used in markdown as formatting
-			$output = addcslashes($output, '*_~`');
-
-			// Assign result
-			$textNode->nodeValue = $output;
-		}
-	}
-
-	if ($debugDumpIntermediary) {
-		$intermediaryDocument->preserveWhiteSpace = false;
-		$intermediaryDocument->formatOutput = true;
-		die($intermediaryDocument->saveXML());
-	}
-
-	//==========================================================================
-	// Step 5: Convert from the intermediary XML format to Markdown
-	//==========================================================================
-
-	$xslDocument = new DOMDocument(VERSION, ENCODING);
-	if ($optionImage) {
-		// Replace image placeholder with image template
-		$imageFilename = ($mdFilename) ? basename($mdFilename, '.md') . '.' : null;
-		$imageTemplate = sprintf(IMAGE_TEMPLATE, $imageFolder, $imageFilename);
-		$xslDocument->loadXML(sprintf(INTERMEDIARY_TO_MARKDOWN_TRANSFORM, $imageTemplate));
-	} else {
-		// Replace image placeholder with a blank string
-		$xslDocument->loadXML(sprintf(INTERMEDIARY_TO_MARKDOWN_TRANSFORM, ''));
-	}
-
-	$processor = new XSLTProcessor();
-	$processor->importStyleSheet($xslDocument);
-	$markdown = $processor->transformToXml($intermediaryDocument);
-	$markdown = rtrim(join(PHP_EOL, array_map('rtrim', explode("\n", $markdown))));
-
-	//==========================================================================
-	// Step 6: If the Markdown output file was specified, write it. Otherwise
-	// just write to STDOUT (echo)
-	//==========================================================================
-
-	if (!$isTestMode) {
-		$formatter       = "%s \033[32m" . html_entity_decode('&radic;') . " \033[0m  ";
-		$completeMessage = 'Performing conversion... finished';
 
 		if ($optionImage) {
-			$completeMessage .= ' with images included';
+			if ($isTestMode) {
+				$imageFolder = 'images';
+			} else {
+				$imageFolder = $destination . 'images';
+				if (file_exists($imageFolder) && is_dir($imageFolder)) {
+					// Clean-up existing images only associated with the defined markdown file
+					$images = glob("{$imageFolder}/" . basename($mdFilename, '.md') . '.*.{bmp,gif,jpg,jpeg,png}', GLOB_BRACE);
+					foreach ($images as $image) {
+						if (is_file($image)) {
+							unlink($image);
+						}
+					}
+				} else {
+					mkdir($imageFolder, 0777, true);
+				}
+			}
 		}
 
-		echo sprintf($formatter, $completeMessage);
+		$zip = new ZipArchive;
+		$res = $zip->open($docxFilename);
 
-		if ($mdFilename !== null) {
-			file_put_contents($mdFilename, $markdown);
-			echo PHP_EOL . " Created: \"{$mdFilename}\"";
+		if ($res === true) {
+			if (!$isTestMode && $optionImage) {
+				extractFolder($zip, 'word/media', $documentFolder, $imageFolder, $mdFilename);
+			} else {
+				extractFolder($zip, 'word/media', $documentFolder);
+			}
+			$zip->extractTo($documentFolder, array('word/document.xml', 'word/_rels/document.xml.rels', 'docProps/core.xml'));
+			$zip->close();
 		} else {
-			echo PHP_EOL . PHP_EOL;
-			echo 'Markdown:' . PHP_EOL;
-			echo str_repeat('-', 9) . PHP_EOL;
-			echo $markdown;
+			die("The .docx file appears to be corrupt (i.e. it can't be opened using Zip). Please try re-saving your document and re-uploading, or ensuring that you are providing a valid .docx file.");
 		}
-	}
 
-	//==========================================================================
-	// Step 7: Clean-up
-	//==========================================================================
+		//==========================================================================
+		// Step 2: Read the main document.xml and also bring in the rels document
+		//==========================================================================
 
-	if (file_exists($documentFolder)) {
-		rrmdir($documentFolder);
+		$wordDocument = new DOMDocument(VERSION, ENCODING);
+		$wordDocument->load($documentFolder . '/word/document.xml');
+
+		$wordDocumentRels = new DOMDocument(VERSION, ENCODING);
+		$wordDocumentRels->load($documentFolder . '/word/_rels/document.xml.rels');
+		$wordDocument->documentElement->appendChild($wordDocument->importNode($wordDocumentRels->documentElement, true));
+
+		$xml = $wordDocument->saveXML();
+
+		// libxml < 2.7 fix
+		$xml = str_replace('r:id=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
+		$xml = str_replace('r:embed=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed=', $xml);
+
+		$mainDocument = new DOMDocument(VERSION, ENCODING);
+		$mainDocument->loadXML($xml);
+
+		if ($debugDumpWord) {
+			$mainDocument->preserveWhiteSpace = false;
+			$mainDocument->formatOutput = true;
+			die($mainDocument->saveXML());
+		}
+
+		//==========================================================================
+		// Step 3: Convert the bulk of the docx XML to an intermediary format
+		//==========================================================================
+
+		$xslDocument = new DOMDocument(VERSION, ENCODING);
+		$xslDocument->loadXML(DOCX_TO_INTERMEDIARY_TRANSFORM);
+
+		$processor = new XSLTProcessor();
+		$processor->importStyleSheet($xslDocument);
+		$intermediaryDocument = $processor->transformToDoc($mainDocument);
+
+		//==========================================================================
+		// Step 4: Use string functions to trim away unwanted whitespace in
+		// specific places. Use DOMXPath to iterate through specific tags and
+		// clean the data
+		//==========================================================================
+
+		$xml = $intermediaryDocument->saveXML();
+
+		$displayTags = array('i:para', 'i:heading', 'i:listitem');
+
+		foreach ($displayTags as $tag) {
+			// Remove any number of spaces that follow the opening tag
+			$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", ' \\1', $xml);
+
+			// Remove multiple spaces before closing tags
+			$xml = preg_replace("/[ ]*<\/{$tag}>/", "</{$tag}>", $xml);
+		}
+
+		$formattingTags = array('i:bold', 'i:italic', 'i:strikethrough', 'i:line');
+
+		foreach ($formattingTags as $tag) {
+			// Convert parallel repeated tags to single instance
+			// e.g. `<i:x>foo</i:x><i:x>bar</i:x>` to `<i:x>foo bar</i:x>`
+			$xml = preg_replace("/(<\/{$tag}>)[ ]*<{$tag}>/", ' ', $xml);
+
+			// Remove any number of spaces that follow the opening tag
+			$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", ' \\1', $xml);
+
+			// Remove multiple spaces before closing tags
+			$xml = preg_replace("/[ ]*<\/{$tag}>/", "</{$tag}>", $xml);
+		}
+
+		// Remove white spaces between tags
+		$xml = preg_replace('/(\>)\s*(\<)/m', '$1$2', $xml);
+
+		$intermediaryDocument->loadXML($xml);
+
+		// Remove empty tags
+		$xpath = new DOMXPath($intermediaryDocument);
+		while (($nodes = $xpath->query('//*[not(*) and not(\'i:image\') and not(text()[normalize-space()])]')) && ($nodes->length)) {
+			foreach ($nodes as $node) {
+				$node->parentNode->removeChild($node);
+			}
+		}
+
+		$allTags = array_merge($displayTags, $formattingTags);
+
+		foreach ($allTags as $tag) {
+			foreach ($xpath->query("//{$tag}/text()") as $textNode) {
+				$output = $textNode->nodeValue;
+
+				// Cleanse data
+				$output = cleanData($output);
+
+				// Replace multiple spaces with a single space
+				$output = preg_replace('!\s+!', ' ', $output);
+
+				// Remove spaces preceding punctuation
+				$output = preg_replace('/\s*([\.,\?\!])/', '\\1', $output);
+
+				// Escape existing chars used in markdown as formatting
+				$output = addcslashes($output, '*_~`');
+
+				// Assign result
+				$textNode->nodeValue = $output;
+			}
+		}
+
+		if ($debugDumpIntermediary) {
+			$intermediaryDocument->preserveWhiteSpace = false;
+			$intermediaryDocument->formatOutput = true;
+			die($intermediaryDocument->saveXML());
+		}
+
+		//==========================================================================
+		// Step 5: Convert from the intermediary XML format to Markdown
+		//==========================================================================
+
+		$xslDocument = new DOMDocument(VERSION, ENCODING);
+		if ($optionImage) {
+			// Replace image placeholder with image template
+			$imageFilename = ($mdFilename) ? basename($mdFilename, '.md') . '.' : null;
+			$imageTemplate = sprintf(IMAGE_TEMPLATE, $imageFolder, $imageFilename);
+			$xslDocument->loadXML(sprintf(INTERMEDIARY_TO_MARKDOWN_TRANSFORM, $imageTemplate));
+		} else {
+			// Replace image placeholder with a blank string
+			$xslDocument->loadXML(sprintf(INTERMEDIARY_TO_MARKDOWN_TRANSFORM, ''));
+		}
+
+		$processor = new XSLTProcessor();
+		$processor->importStyleSheet($xslDocument);
+		$markdown = $processor->transformToXml($intermediaryDocument);
+		$markdown = rtrim(join(PHP_EOL, array_map('rtrim', explode("\n", $markdown))));
+
+		//==========================================================================
+		// Step 6: If the Markdown output file was specified, write it. Otherwise
+		// just write to STDOUT (echo)
+		//==========================================================================
+
+		if (!$isTestMode) {
+			if (!$isMultipleFiles || $index === 0) {
+				$formatter       = "%s \033[32m" . html_entity_decode('&radic;') . " \033[0m  ";
+				$completeMessage = 'Performing conversion... finished';
+
+				if ($optionImage) {
+					$completeMessage .= ' with images included';
+				}
+
+				echo sprintf($formatter, $completeMessage);
+			}
+
+			if ($mdFilename !== null) {
+				file_put_contents("{$destination}" . $mdFilename, $markdown);
+				echo PHP_EOL;
+
+				if ($isMultipleFiles) {
+					$index++;
+					echo " {$index}.";
+				}
+
+				echo ' Created: "' . basename($mdFilename) . '"';
+			} else {
+				echo PHP_EOL . PHP_EOL;
+				echo 'Markdown:' . PHP_EOL;
+				echo str_repeat('-', 9) . PHP_EOL;
+				echo $markdown;
+			}
+		}
+
+		//==========================================================================
+		// Step 7: Clean-up
+		//==========================================================================
+
+		if (file_exists($documentFolder)) {
+			rrmdir($documentFolder);
+		}
 	}
 
 	return $markdown;
@@ -742,6 +774,6 @@ define('INTERMEDIARY_TO_MARKDOWN_TRANSFORM', <<<'XML'
 XML
 );
 
-define('IMAGE_TEMPLATE', '<!-- Image --><xsl:template match="i:image"><xsl:text>![Image](%s/%s</xsl:text><xsl:value-of select="str:tokenize(@src, \'/\')[last()]" /><xsl:text>)&#xa;</xsl:text></xsl:template>');
+define('IMAGE_TEMPLATE', '<!-- Image --><xsl:template match="i:image"><xsl:text>![Image](%s\%s</xsl:text><xsl:value-of select="str:tokenize(@src, \'/\')[last()]" /><xsl:text>)&#xa;</xsl:text></xsl:template>');
 
 docx2md($argv);

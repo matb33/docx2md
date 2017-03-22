@@ -49,7 +49,6 @@ function docx2md(array $args, $isTestMode = false) {
 	// Re-index the array
 	$args = array_values($args);
 
-
 	if (count($args) <= 0) {
 		// If option is set and not already in test mode
 		// run tests and *stop*

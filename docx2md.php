@@ -100,9 +100,9 @@ function docx2md(array $args, $isTestMode = false) {
 		$docxFilename = realpath($docxFilename);
 	}
 
-	$isMultipleFiles = false;
+	$hasMultipleFiles = false;
 	if (is_dir($docxFilename)) {
-		$isMultipleFiles = true;
+		$hasMultipleFiles = true;
 		$sourceFiles = glob("{$docxFilename}\\*.docx");
 		$destination = realpath($mdFilename) . '\\';
 	} else {
@@ -112,7 +112,7 @@ function docx2md(array $args, $isTestMode = false) {
 
 	foreach ($sourceFiles as $index => $docxFilename) {
 		if (!$isTestMode && $mdFilename !== null) {
-			if ($isMultipleFiles) {
+			if ($hasMultipleFiles) {
 				$mdFilename = basename($docxFilename, 'docx') . 'md';
 			} else if(file_exists($mdFilename)) {
 				// Generate a random extension so as not to overwrite destination filename
@@ -302,7 +302,7 @@ function docx2md(array $args, $isTestMode = false) {
 		//==========================================================================
 
 		if (!$isTestMode) {
-			if (!$isMultipleFiles || $index === 0) {
+			if (!$hasMultipleFiles || $index === 0) {
 				$formatter       = "%s \033[32m" . html_entity_decode('&radic;') . " \033[0m  ";
 				$completeMessage = 'Performing conversion... finished';
 
@@ -317,7 +317,7 @@ function docx2md(array $args, $isTestMode = false) {
 				file_put_contents("{$destination}" . $mdFilename, $markdown);
 				echo PHP_EOL;
 
-				if ($isMultipleFiles) {
+				if ($hasMultipleFiles) {
 					$index++;
 					echo " {$index}.";
 				}

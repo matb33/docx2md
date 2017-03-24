@@ -86,12 +86,12 @@ function docx2md(array $args, $isTestMode = false) {
 	$docxFilename = null;
 	$mdFilename   = null;
 
-	if (array_key_exists(0, $args) && $args[0] !== '') {
-		$docxFilename = $args[0];
-	}
-
-	if (array_key_exists(1, $args) && $args[1] !== '') {
-		$mdFilename = $args[1];
+	foreach ($args as $index => $arg) {
+		if ($index === 0) {
+			$docxFilename = $args[$index];
+		} else if ($index === 1) {
+			$mdFilename = $args[$index];
+		}
 	}
 
 	if (!file_exists($docxFilename)) {

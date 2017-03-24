@@ -14,7 +14,8 @@ const ENCODING = 'UTF-8';
  * @param  boolean $isTestMode
  * @return string
  */
-function docx2md(array $args, $isTestMode = false) {
+function docx2md(array $args, $isTestMode = false)
+{
 	$debugDumpWord         = false;
 	$debugDumpIntermediary = false;
 
@@ -358,7 +359,8 @@ function docx2md(array $args, $isTestMode = false) {
  * @param  string $mdFilename
  * @return void
  */
-function extractFolder($zip, $folderName, $destination, $imageFolder = null, $mdFilename = null) {
+function extractFolder($zip, $folderName, $destination, $imageFolder = null, $mdFilename = null)
+{
 	for ($i = 0; $i < $zip->numFiles; $i++) {
 		$fileName = $zip->getNameIndex($i);
 
@@ -381,7 +383,8 @@ function extractFolder($zip, $folderName, $destination, $imageFolder = null, $md
  * @param  string $directory
  * @return void
  */
-function rrmdir($directory) {
+function rrmdir($directory)
+{
 	foreach (glob($directory . '/*') as $file) {
 		if (is_dir($file)) {
 			rrmdir($file);
@@ -400,7 +403,8 @@ function rrmdir($directory) {
  * @param  string $data
  * @return string
  */
-function cleanData($data){
+function cleanData($data)
+{
 	$replacementChars = array("'", "'", '"', '"', '-', '--', '...', ' ');
 
 	// Replace UTF-8 characters
@@ -419,7 +423,8 @@ function cleanData($data){
  * @param $args
  * @return void
  */
-function runTests($args){
+function runTests($args)
+{
 	$src       = 'examples';
 	$formatter = " %s. %s\033[0m: %s" . PHP_EOL;
 	$formatter = " %s. %s\033[0m: %s" . PHP_EOL;

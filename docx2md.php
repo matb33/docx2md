@@ -933,6 +933,6 @@ XML
 }
 
 // Create class automagically when executed on the command-line
-if (php_sapi_name() === 'cli') {
+if (php_sapi_name() === Docx2md::PHP_SAPI_NAME) {
 	new Docx2md($argv);
 }

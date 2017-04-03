@@ -14,9 +14,11 @@ namespace Docx2md;
 
 class Docx2md
 {
-	const PHP_SAPI_NAME = 'cli';
-	const VERSION       = '1.0';
-	const ENCODING      = 'UTF-8';
+	const PHP_SAPI_NAME      = 'cli';
+	const VERSION            = '1.0';
+	const ENCODING           = 'UTF-8';
+	const DEBUG_INTERMEDIARY = '1';
+	const DEBUG_WORD         = '2';
 
 	/**
 	 * Toggle whether the command-line has run the script
@@ -60,30 +62,45 @@ class Docx2md
 	 */
 	private function docx2md(array $args, $isTestMode = false)
 	{
-		$debugDumpWord         = false;
-		$debugDumpIntermediary = false;
-
 		if ($this->isClient) {
 			// Set command-line to use utf-8
 			shell_exec('chcp 65001');
 
 			// Check command line options
-			$longOptionsArray = array('image', 'test');
+			$longOptionsArray = array('debug:', 'image', 'test');
 
 			$shortOptionsArray = array_map(function ($value) {
-				return substr($value, 0, 1);
+				return substr($value, 0, 1) . preg_replace('/[a-zA-Z0-9]/', '', $value);
 			}, $longOptionsArray);
 			$shortOptions = implode($shortOptionsArray);
 
 			$options = getopt($shortOptions, $longOptionsArray);
 
 			if ($options) {
+                $shortOptionsArray = array_map(function($item) {
+                    return rtrim($item, ':');
+                }, $shortOptionsArray);
+                $longOptionsArray = array_map(function($item) {
+                    return rtrim($item, ':');
+                }, $longOptionsArray);
+
 				foreach ($longOptionsArray as $index => $longOption) {
-					${'option' . ucfirst($longOption)} = false;
+                    $variableName = 'option' . ucfirst($longOption);
+
+					${$variableName} = false;
 					${$longOption . 'Options'} = array($shortOptionsArray[$index], $longOptionsArray[$index], "-{$shortOptionsArray[$index]}", "--{$longOptionsArray[$index]}");
 
-					if (array_key_exists(${$longOption . 'Options'}[0], $options) || array_key_exists(${$longOption . 'Options'}[1], $options) || array_intersect($args, ${$longOption . 'Options'})) {
-						${'option' . ucfirst($longOption)} = true;
+                    if (array_key_exists(${$longOption . 'Options'}[0], $options) ||
+                        array_key_exists(${$longOption . 'Options'}[1], $options) ||
+                        array_intersect($args, ${$longOption . 'Options'})) {
+						$optionValue = array_intersect_key($options, array_flip(${$longOption . 'Options'}));
+                        $optionValue = array_values($optionValue)[0];
+
+                        if (is_bool($optionValue)) {
+                            ${$variableName} = true;
+                        } else {
+                            ${$variableName} = $optionValue;
+                        }
 					}
 				}
 			}
@@ -109,9 +126,15 @@ class Docx2md
 			$output  = 'Converts Micro$oft Word .docx files to Markdown format.' . PHP_EOL;
 			$output .= 'docx2md is written by Mathieu Bouchard (@matb33).' . PHP_EOL;
 			$output .= PHP_EOL;
-			$output .= 'Usage: php ./docx2md.php [options] [source.docx|path/to/dir] [destination.md|path/to/dir]' . PHP_EOL;
+			$output .= 'Usage: php ./docx2md.php [options=[values]] [source.docx|path/to/dir] [destination.md|path/to/dir]' . PHP_EOL;
 			$output .= PHP_EOL;
 			$output .= 'Options:';
+			$output .= PHP_EOL;
+			$output .= '  -d, --debug=1|2 Debug mode';
+			$output .= PHP_EOL;
+			$output .= '    1 to dump Intermediary';
+			$output .= PHP_EOL;
+			$output .= '    2 to dump Word';
 			$output .= PHP_EOL;
 			$output .= '  -i, --image Parse images';
 			$output .= PHP_EOL;
@@ -121,7 +144,7 @@ class Docx2md
 			$output .= 'If no destination file is specified, output will be written to the console excluding any images.';
 			$output .= PHP_EOL;
 			die($output);
-		} else if (!$debugDumpWord && !$debugDumpIntermediary) {
+		} else if (empty($optionDebug)) {
 			// If option is set and not already in test mode
 			// run tests and *continue on* with converting
 			if (!empty($optionTest) && !$isTestMode) {
@@ -235,7 +258,7 @@ class Docx2md
 			$mainDocument = new \DOMDocument(self::VERSION, self::ENCODING);
 			$mainDocument->loadXML($xml);
 
-			if ($debugDumpWord) {
+			if (!empty($optionDebug) && $optionDebug === self::DEBUG_WORD) {
 				$mainDocument->preserveWhiteSpace = false;
 				$mainDocument->formatOutput = true;
 				die($mainDocument->saveXML());
@@ -320,7 +343,7 @@ class Docx2md
 				}
 			}
 
-			if ($debugDumpIntermediary) {
+			if (!empty($optionDebug) && $optionDebug === self::DEBUG_INTERMEDIARY) {
 				$intermediaryDocument->preserveWhiteSpace = false;
 				$intermediaryDocument->formatOutput = true;
 				die($intermediaryDocument->saveXML());

@@ -50,7 +50,7 @@ class Docx2md
 	 */
 	public function parseFile($filename)
 	{
-		return nl2br($this->docx2md(array($filename)));
+		return nl2br($this->docx2md(array($filename)), false);
 	}
 
 	/**

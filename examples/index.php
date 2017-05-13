@@ -5,5 +5,8 @@
 
     $files = glob('docx/*.docx', GLOB_BRACE);
     foreach ($files as $file) {
-        echo $converter->parseFile($file) . '<br><br>';
+        $result = $converter->parseFile($file);
+
+        echo nl2br($result->markdown, false);
+        echo '<br><br>';
     }

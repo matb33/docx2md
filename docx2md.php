@@ -26,6 +26,13 @@ class Docx2md
 	const YELLOW = "\033[33m";
 
 	/**
+	 * Track the converted markdown output
+	 *
+	 * @var string
+	 */
+	public $markdown = '';
+
+	/**
 	 * Toggle whether the command-line has run the script
 	 *
 	 * @var boolean
@@ -55,7 +62,7 @@ class Docx2md
 	 */
 	public function parseFile($filename)
 	{
-		return nl2br($this->docx2md(array($filename)), false);
+		return $this->docx2md(array($filename));
 	}
 
 	/**
@@ -379,6 +386,8 @@ class Docx2md
 			$markdown = $processor->transformToXml($intermediaryDocument);
 			$markdown = rtrim(join(PHP_EOL, array_map('rtrim', explode("\n", $markdown))));
 
+			$this->markdown = $markdown;
+
 			//==========================================================================
 			// Step 6: If the Markdown output file was specified, write it. Otherwise
 			// just write to STDOUT (echo)
@@ -427,7 +436,7 @@ class Docx2md
 			}
 		}
 
-		return $markdown;
+		return $this;
 	}
 
 	//==============================================================================
@@ -569,8 +578,9 @@ class Docx2md
 			$n++;
 			$file2 = basename($file1, '.docx') . '.md';
 
-			$markdown = $this->docx2md(array('', '-i', $file1, $file2), true);
-			$md       = "{$src}/md/{$file2}";
+			$markdown = $this->docx2md(array('', '-i', $file1, $file2), true)
+							 ->markdown;
+			$md = "{$src}/md/{$file2}";
 
 			$fileHash1 = sha1(preg_replace('/\v+/', PHP_EOL . PHP_EOL, $markdown));
 			$fileHash2 = sha1(preg_replace('/\v+/', PHP_EOL . PHP_EOL, file_get_contents($md)));

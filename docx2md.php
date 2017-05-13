@@ -94,7 +94,7 @@ class Docx2md
 						array_key_exists(${$longOption . 'Options'}[1], $options) ||
 						array_intersect($args, ${$longOption . 'Options'})) {
 						$optionValue = array_intersect_key($options, array_flip(${$longOption . 'Options'}));
-						$optionValue = array_values($optionValue)[0];
+						$optionValue = count($optionValue) ? array_values($optionValue)[0] : null;
 
 						if (is_bool($optionValue)) {
 							${$variableName} = true;
@@ -152,6 +152,11 @@ class Docx2md
 			}
 		}
 
+		// Force the parsing of images if in test mode
+		if (!$this->isClient || !empty($optionTest)) {
+			$optionImage = true;
+		}
+
 		//==========================================================================
 		// Extract command-line parameters
 		//==========================================================================
@@ -187,7 +192,7 @@ class Docx2md
 			if (!$isTestMode && $mdFilename !== null) {
 				if ($hasMultipleFiles) {
 					$mdFilename = basename($docxFilename, 'docx') . 'md';
-				} else if(file_exists($mdFilename)) {
+				} else if (file_exists($mdFilename)) {
 					// Generate a random extension so as not to overwrite destination filename
 					$mdFilename = $mdFilename . '.' . substr(md5(uniqid(rand(), true)), 0, 5);
 				}
@@ -252,7 +257,7 @@ class Docx2md
 			$xml = $wordDocument->saveXML();
 
 			// libxml < 2.7 fix
-			$xml = str_replace('r:id=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
+			$xml = str_replace('r:id=',    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
 			$xml = str_replace('r:embed=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed=', $xml);
 
 			$mainDocument = new \DOMDocument(self::VERSION, self::ENCODING);
@@ -548,8 +553,8 @@ class Docx2md
 
 		echo 'Running tests...';
 
-		$files = glob("{$src}/docx/*.docx");
-		$size  = sizeof($files);
+		$files     = glob("{$src}/docx/*.docx");
+		$size      = sizeof($files);
 		$charCount = 0;
 
 		foreach ($files as $n => $file1) {

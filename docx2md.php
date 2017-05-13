@@ -385,6 +385,8 @@ class Docx2md
 			//==========================================================================
 
 			if ($this->isClient && !$isTestMode) {
+				$output = '';
+
 				if (!$hasMultipleFiles || $index === 0) {
 					$formatter       = '%s' . ' ' . self::GREEN . html_entity_decode('&radic;') . ' ' . self::WHITE . '  ';
 					$completeMessage = 'Performing conversion... finished';
@@ -393,25 +395,27 @@ class Docx2md
 						$completeMessage .= ' with images included';
 					}
 
-					echo sprintf($formatter, $completeMessage);
+					$output .= sprintf($formatter, $completeMessage);
 				}
 
 				if ($mdFilename !== null) {
 					file_put_contents("{$destination}" . $mdFilename, $markdown);
-					echo PHP_EOL;
+					$output .= PHP_EOL;
 
 					if ($hasMultipleFiles) {
 						$index++;
-						echo " {$index}.";
+						$output .= " {$index}.";
 					}
 
-					echo ' Created: "' . basename($mdFilename) . '"';
+					$output .= ' Created: "' . basename($mdFilename) . '"';
 				} else {
-					echo PHP_EOL . PHP_EOL;
-					echo 'Markdown:' . PHP_EOL;
-					echo str_repeat('-', 9) . PHP_EOL;
-					echo $markdown;
+					$output .= PHP_EOL . PHP_EOL;
+					$output .= 'Markdown:' . PHP_EOL;
+					$output .= str_repeat('-', 9) . PHP_EOL;
+					$output .= $markdown;
 				}
+
+				echo $output;
 			}
 
 			//==========================================================================

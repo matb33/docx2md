@@ -14,11 +14,16 @@ namespace Docx2md;
 
 class Docx2md
 {
-	const PHP_SAPI_NAME      = 'cli';
-	const VERSION            = '1.0';
-	const ENCODING           = 'UTF-8';
-	const DEBUG_INTERMEDIARY = '1';
-	const DEBUG_WORD         = '2';
+	const PHP_SAPI_NAME          = 'cli';
+	const VERSION                = '1.0';
+	const ENCODING               = 'UTF-8';
+	const DEBUG_WORD_XML         = '1';
+	const DEBUG_INTERMEDIARY_XML = '2';
+
+	const WHITE  = "\033[0m";
+	const RED    = "\033[31m";
+	const GREEN  = "\033[32m";
+	const YELLOW = "\033[33m";
 
 	/**
 	 * Toggle whether the command-line has run the script
@@ -123,22 +128,22 @@ class Docx2md
 				return $this->runTests($args);
 			}
 
-			$output  = 'Converts Micro$oft Word .docx files to Markdown format.' . PHP_EOL;
-			$output .= 'docx2md is written by Mathieu Bouchard (@matb33).' . PHP_EOL;
+			$output  = 'Convert Microsoft Word (.docx) files to markdown (.md).' . PHP_EOL;
 			$output .= PHP_EOL;
-			$output .= 'Usage: php ./docx2md.php [options=[values]] [source.docx|path/to/dir] [destination.md|path/to/dir]' . PHP_EOL;
+			$output .= self::YELLOW . 'Usage:' . self::WHITE;
 			$output .= PHP_EOL;
-			$output .= 'Options:';
+			$output .= '  php ./docx2md.php [options=[values]] [path/to/dir|source.docx] [path/to/dir|destination.md]' . PHP_EOL;
 			$output .= PHP_EOL;
-			$output .= '  -d, --debug=1|2 Debug mode';
+			$output .= self::YELLOW . 'Options:' . self::WHITE;
 			$output .= PHP_EOL;
-			$output .= '    1 to dump Intermediary';
+			$output .= self::GREEN . '  -d, --debug[=1|2]' . self::WHITE;
+			$output .= ' Output debug info then terminate: 1=XML from Word, 2=intermediary XML';
 			$output .= PHP_EOL;
-			$output .= '    2 to dump Word';
+			$output .= self::GREEN . '  -i, --image' . self::WHITE;
+			$output .= '       Parse images during conversion';
 			$output .= PHP_EOL;
-			$output .= '  -i, --image Parse images';
-			$output .= PHP_EOL;
-			$output .= '  -t, --test  Run tests';
+			$output .= self::GREEN . '  -t, --test' . self::WHITE;
+			$output .= '        Output test results then terminate';
 			$output .= PHP_EOL;
 			$output .= PHP_EOL;
 			$output .= 'If no destination file is specified, output will be written to the console excluding any images.';
@@ -263,7 +268,7 @@ class Docx2md
 			$mainDocument = new \DOMDocument(self::VERSION, self::ENCODING);
 			$mainDocument->loadXML($xml);
 
-			if (!empty($optionDebug) && $optionDebug === self::DEBUG_WORD) {
+			if (!empty($optionDebug) && $optionDebug === self::DEBUG_WORD_XML) {
 				$mainDocument->preserveWhiteSpace = false;
 				$mainDocument->formatOutput = true;
 				die($mainDocument->saveXML());
@@ -348,7 +353,7 @@ class Docx2md
 				}
 			}
 
-			if (!empty($optionDebug) && $optionDebug === self::DEBUG_INTERMEDIARY) {
+			if (!empty($optionDebug) && $optionDebug === self::DEBUG_INTERMEDIARY_XML) {
 				$intermediaryDocument->preserveWhiteSpace = false;
 				$intermediaryDocument->formatOutput = true;
 				die($intermediaryDocument->saveXML());
@@ -381,7 +386,7 @@ class Docx2md
 
 			if ($this->isClient && !$isTestMode) {
 				if (!$hasMultipleFiles || $index === 0) {
-					$formatter       = "%s \033[32m" . html_entity_decode('&radic;') . " \033[0m  ";
+					$formatter       = '%s' . ' ' . self::GREEN . html_entity_decode('&radic;') . ' ' . self::WHITE . '  ';
 					$completeMessage = 'Performing conversion... finished';
 
 					if (!empty($optionImage)) {
@@ -547,9 +552,8 @@ class Docx2md
 	private function runTests($args)
 	{
 		$src       = 'examples';
-		$formatter = " %s. %s\033[0m: %s" . PHP_EOL;
-		$formatter = " %s. %s\033[0m: %s" . PHP_EOL;
-		$output    = "\033[0m";
+		$formatter = ' %s. %s' . self::WHITE . ': %s' . PHP_EOL;
+		$output    = self::WHITE;
 
 		echo 'Running tests...';
 
@@ -575,16 +579,16 @@ class Docx2md
 			}
 
 			if ($fileHash1 === $fileHash2) {
-				$sprintf = sprintf($formatter, $n, "\033[32mPassed " . html_entity_decode('&radic;'), $file1);
+				$sprintf = sprintf($formatter, $n, self::GREEN . 'Passed ' . html_entity_decode('&radic;'), $file1);
 			} else {
-				$sprintf = sprintf($formatter, $n, "\033[31mFailed " . html_entity_decode('&times;'), $file1);
+				$sprintf = sprintf($formatter, $n, self::RED . 'Failed ' . html_entity_decode('&times;'), $file1);
 			}
 
 			$charCount = strlen(rtrim($sprintf));
 			$output   .= $sprintf;
 		}
 
-		echo ' finished' . " \033[32m" . html_entity_decode('&radic;') . " \033[0m" . PHP_EOL . rtrim($output, PHP_EOL);
+		echo ' finished' . ' ' . self::GREEN . html_entity_decode('&radic;') . ' ' . self::GREEN . PHP_EOL . rtrim($output, PHP_EOL);
 
 		if ($args) {
 			// If performing conversion after running tests, print a separator

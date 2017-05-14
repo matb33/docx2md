@@ -40,6 +40,22 @@ class Docx2md
 	public $isClient = false;
 
 	/**
+	 * Populate statistics relating to the document
+	 *
+	 * @var array
+	 */
+	public $metadata = array(
+		'characterCount' => array(
+			'withSpaces'	=> 0,
+			'withoutSpaces' => 0,
+		),
+		'imageCount'     => 0,
+		'paragraphCount' => 0,
+		'tableCount'     => 0,
+		'wordCount'      => 0,
+	);
+
+	/**
 	 * Constructor
 	 *
 	 * @param  array $argv
@@ -337,6 +353,10 @@ class Docx2md
 				}
 			}
 
+			$characterCountWithSpaces    = 0;
+			$characterCountWithoutSpaces = 0;
+			$wordCount                   = 0;
+
 			$allTags = array_merge($displayTags, $formattingTags);
 
 			foreach ($allTags as $tag) {
@@ -357,8 +377,34 @@ class Docx2md
 
 					// Assign result
 					$textNode->nodeValue = $output;
+
+					$characterCountWithSpaces    += mb_strlen($output);
+					$characterCountWithoutSpaces += mb_strlen(str_replace(' ', '', $output));
+					$wordCount                   += str_word_count($output);
 				}
 			}
+
+			$imageCount = 0;
+			foreach ($xpath->query('//i:image') as $node) {
+				$imageCount++;
+			}
+
+			$paragraphCount = 0;
+			foreach ($xpath->query('//i:para') as $node) {
+				$paragraphCount++;
+			}
+
+			$tableCount = 0;
+			foreach ($xpath->query('//i:table') as $node) {
+				$tableCount++;
+			}
+
+			$this->metadata['characterCount']['withSpaces']    = $characterCountWithSpaces;
+			$this->metadata['characterCount']['withoutSpaces'] = $characterCountWithoutSpaces;
+			$this->metadata['imageCount']                      = $imageCount;
+			$this->metadata['paragraphCount']                  = $paragraphCount;
+			$this->metadata['tableCount']                      = $tableCount;
+			$this->metadata['wordCount']                       = $wordCount;
 
 			if (!empty($optionDebug) && $optionDebug === self::DEBUG_INTERMEDIARY_XML) {
 				$intermediaryDocument->preserveWhiteSpace = false;

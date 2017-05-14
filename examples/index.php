@@ -7,6 +7,9 @@
     foreach ($files as $file) {
         $result = $converter->parseFile($file);
 
+        print_r($result->metadata);
+        echo '<br><br>';
+
         echo nl2br($result->markdown, false);
         echo '<br><br>';
     }

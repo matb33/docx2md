@@ -33,7 +33,7 @@ class Docx2md
 	public $markdown = '';
 
 	/**
-	 * Toggle whether the command-line has run the script
+	 * Toggle whether the command line has run the script
 	 *
 	 * @var boolean
 	 */
@@ -82,7 +82,7 @@ class Docx2md
 	}
 
 	/**
-	 * Convert a .docx file to markdown using the given command-line arguments
+	 * Convert a `.docx` file to markdown using the given command line arguments
 	 *
 	 * @param  array   $args
 	 * @param  boolean $isTestMode
@@ -91,7 +91,7 @@ class Docx2md
 	private function docx2md(array $args, $isTestMode = false)
 	{
 		if ($this->isClient) {
-			// Set command-line to use utf-8
+			// Set command line to use utf-8
 			shell_exec('chcp 65001');
 
 			// Check command line options
@@ -186,7 +186,7 @@ class Docx2md
 		}
 
 		//==========================================================================
-		// Extract command-line parameters
+		// Extract command line parameters
 		//==========================================================================
 
 		$docxFilename = null;
@@ -1068,7 +1068,7 @@ XML
 	;
 }
 
-// Create class automagically when executed on the command-line
+// Create class automagically when executed on the command line
 if (php_sapi_name() === Docx2md::PHP_SAPI_NAME) {
 	new Docx2md($argv);
 }

@@ -1,17 +1,25 @@
 # docx2md
 
-## Convert Micro$oft Word `.docx` files to markdown format
+## Convert a `.docx` file to markdown using the given command line arguments
 
 - This is a simple converter that will read a `.docx` file and convert it into markdown format.
-  - It works on the command-line or included as a standalone script.
-- Code example
+  - It works on the command line or included as a standalone script.
+
+### On the command line
+
+- Run `php docx2md.php` to see a list of available options and how to use the converter
+
+### As a standalone script
 
 ```php
 <?php
     require_once 'docx2md.php';
 
     $converter = new Docx2md\Docx2md;
-    echo $converter->parseFile('word.docx')->markdown;
+    $converter = $converter->parseFile('word.docx');
+    $markdown  = $converter->markdown;
+
+    echo $markdown;
 ```
 
 ## Background

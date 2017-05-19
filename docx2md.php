@@ -265,7 +265,7 @@ class Docx2md
 				} else {
 					$this->extractFolder($zip, 'word/media', $documentFolder);
 				}
-				$zip->extractTo($documentFolder, array('word/document.xml', 'word/_rels/document.xml.rels', 'docProps/core.xml'));
+				$zip->extractTo($documentFolder, array('word/document.xml', 'word/_rels/document.xml.rels'));
 				$zip->close();
 			} else {
 				die("The .docx file appears to be corrupt (i.e. it can't be opened using Zip). Please try re-saving your document and re-uploading, or ensuring that you are providing a valid .docx file.");

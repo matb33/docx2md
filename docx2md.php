@@ -380,7 +380,7 @@ class Docx2md
 
 					$characterCountWithSpaces    += mb_strlen($output);
 					$characterCountWithoutSpaces += mb_strlen(str_replace(' ', '', $output));
-					$wordCount                   += str_word_count($output);
+					$wordCount                   += str_word_count($output, 0, 1234567890);
 				}
 			}
 

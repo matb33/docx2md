@@ -340,7 +340,13 @@ class Docx2md
 				$xml = preg_replace("/[ ]*<\/{$tag}>/", "</{$tag}>", $xml);
 			}
 
-			// Remove white spaces between tags
+            // Convert HTML line breaks to new lines
+            $xml = preg_replace('#\s*<br\s*/?>#i', "\n", $xml);
+
+            // Remove leading whitespace before closing tags
+            $xml = preg_replace('/\s*(\<\/)/m', '$1', $xml);
+
+			// Remove whitespace between tags
 			$xml = preg_replace('/(\>)\s*(\<)/m', '$1$2', $xml);
 
 			$intermediaryDocument->loadXML($xml);
@@ -367,7 +373,7 @@ class Docx2md
 					$output = $this->cleanData($output);
 
 					// Replace multiple spaces with a single space
-					$output = preg_replace('!\s+!', ' ', $output);
+					$output = preg_replace('! +!', ' ', $output);
 
 					// Remove spaces preceding punctuation
 					$output = preg_replace('/\s*([\.,\?\!])/', '\\1', $output);

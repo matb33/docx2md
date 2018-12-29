@@ -991,7 +991,7 @@ XML
 
 		<!-- Bulleted list-item -->
 		<xsl:template match="i:listitem[@type!='2']">
-			<xsl:value-of select="substring('		  ', 1, @level * 2)" />
+			<xsl:value-of select="substring('         ', 1, @level * 3)" />
 			<xsl:text> - </xsl:text>
 			<xsl:apply-templates />
 			<xsl:text>&#xa;</xsl:text>
@@ -1004,7 +1004,7 @@ XML
 		<xsl:template match="i:listitem[@type='2']">
 			<xsl:variable name="level" select="@level" />
 			<xsl:variable name="type" select="@type" />
-			<xsl:value-of select="substring('		  ', 1, $level * 2)" />
+			<xsl:value-of select="substring('         ', 1, $level * 3)" />
 			<xsl:text> 1. </xsl:text>
 			<xsl:apply-templates />
 			<xsl:text>&#xa;</xsl:text>

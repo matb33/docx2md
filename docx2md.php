@@ -344,10 +344,10 @@ class Docx2md
 			$xml = preg_replace('#\s*<br\s*/?>#i', "\n", $xml);
 
 			// Remove leading whitespace before closing tags
-			$xml = preg_replace('/\s*(\<\/)/m', '$1', $xml);
+			$xml = preg_replace('/\s+(\<\/)/m', '\\1', $xml);
 
 			// Remove whitespace between tags
-			$xml = preg_replace('/(\>)\s*(\<)/m', '$1$2', $xml);
+			$xml = preg_replace('/(\>)\s+(\<)/m', '\\1\\2', $xml);
 
 			$intermediaryDocument->loadXML($xml);
 
@@ -376,7 +376,7 @@ class Docx2md
 					$output = preg_replace('! +!', ' ', $output);
 
 					// Remove spaces preceding punctuation
-					$output = preg_replace('/\s*([\.,\?\!])/', '\\1', $output);
+					$output = preg_replace('/\s+([\.,;:\?\!])/', '\\1', $output);
 
 					// Escape existing chars used in markdown as formatting
 					$output = addcslashes($output, '*_~`');

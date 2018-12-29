@@ -340,11 +340,11 @@ class Docx2md
 				$xml = preg_replace("/[ ]*<\/{$tag}>/", "</{$tag}>", $xml);
 			}
 
-            // Convert HTML line breaks to new lines
-            $xml = preg_replace('#\s*<br\s*/?>#i', "\n", $xml);
+			// Convert HTML line breaks to new lines
+			$xml = preg_replace('#\s*<br\s*/?>#i', "\n", $xml);
 
-            // Remove leading whitespace before closing tags
-            $xml = preg_replace('/\s*(\<\/)/m', '$1', $xml);
+			// Remove leading whitespace before closing tags
+			$xml = preg_replace('/\s*(\<\/)/m', '$1', $xml);
 
 			// Remove whitespace between tags
 			$xml = preg_replace('/(\>)\s*(\<)/m', '$1$2', $xml);

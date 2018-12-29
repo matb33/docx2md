@@ -349,6 +349,9 @@ class Docx2md
 			// Remove whitespace between tags
 			$xml = preg_replace('/(\>)\s+(\<)/m', '\\1\\2', $xml);
 
+			// Ensure spacing exists between closing and opening tags
+			$xml = preg_replace('/(<\/i:(bold|italic)>)(<i:(bold|italic)>)([^\.,;:\?\!])/', '\\1 \\3\\5', $xml);
+
 			$intermediaryDocument->loadXML($xml);
 
 			// Remove empty tags

@@ -566,8 +566,8 @@ class Docx2md
 			}
 		} else {
 			// Normalize $search and $replace so they are both arrays of the same length
-			$searches     = is_array($search) ? array_values($search) : [$search];
-			$replacements = is_array($replace) ? array_values($replace) : [$replace];
+			$searches     = is_array($search) ? array_values($search) : array($search);
+			$replacements = is_array($replace) ? array_values($replace) : array($replace);
 			$replacements = array_pad($replacements, count($searches), '');
 
 			foreach ($searches as $key => $search) {

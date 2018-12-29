@@ -544,32 +544,42 @@ class Docx2md
 	}
 
 	/**
-	 * Replace all occurrences of the search string with the replacement string. Multibyte safe.
+	 * Replace all occurrences of the search string with the replacement string.
+	 * Multibyte safe.
 	 *
-	 * @param  string|array $search  The value being searched for, otherwise known as the needle. An array may be used to designate multiple needles.
-	 * @param  string|array $replace The replacement value that replaces found search values. An array may be used to designate multiple replacements.
-	 * @param  string|array $subject The string or array being searched and replaced on, otherwise known as the haystack.
-	 *                               If subject is an array, then the search and replace is performed with every entry of subject, and the return value is an array as well.
-	 * @param  integer      $count   If passed, this will be set to the number of replacements performed.
+	 * @param  string|array $search
+	 * @param  string|array $replace
+	 * @param  string|array $subject
+	 * @param  string       $encoding
+	 * @param  integer      $count
 	 * @return array|string
 	 */
-	private function mb_str_replace($search, $replace, $subject, &$count = 0)
+	private static function mb_str_replace($search, $replace, $subject, $encoding = 'auto', &$count = 0)
 	{
-		if (!is_array($subject)) {
+		if (is_array($subject)) {
+			// Call `mb_str_replace` for each subject in array, recursively
+			foreach ($subject as $key => $value) {
+				$subject[$key] = self::mb_str_replace($search, $replace, $value, $encoding, $count);
+			}
+		} else {
 			// Normalize $search and $replace so they are both arrays of the same length
-			$searches     = is_array($search)  ? array_values($search)  : array($search);
-			$replacements = is_array($replace) ? array_values($replace) : array($replace);
+			$searches     = is_array($search) ? array_values($search) : [$search];
+			$replacements = is_array($replace) ? array_values($replace) : [$replace];
 			$replacements = array_pad($replacements, count($searches), '');
 
 			foreach ($searches as $key => $search) {
-				$parts   = mb_split(preg_quote($search), $subject);
-				$count  += count($parts) - 1;
-				$subject = implode($replacements[$key], $parts);
-			}
-		} else {
-			// Call mb_str_replace for each subject in array, recursively
-			foreach ($subject as $key => $value) {
-				$subject[$key] = $this->mb_str_replace($search, $replace, $value, $count);
+				$replace   = $replacements[$key];
+				$searchLen = mb_strlen($search, $encoding);
+
+				$sb = [];
+				while (($offset = mb_strpos($subject, $search, 0, $encoding)) !== false) {
+					$sb[]    = mb_substr($subject, 0, $offset, $encoding);
+					$subject = mb_substr($subject, $offset + $searchLen, null, $encoding);
+					++$count;
+				}
+
+				$sb[]    = $subject;
+				$subject = implode($replace, $sb);
 			}
 		}
 
@@ -588,22 +598,30 @@ class Docx2md
 		$replacementChars = array(
 			"\xe2\x80\x98" => "'",   // ‘
 			"\xe2\x80\x99" => "'",   // ’
-			"\xe2\x80\x9a" => "'",   // ‚
-			"\xe2\x80\x9b" => "'",   // ‛
 			"\xe2\x80\x9c" => '"',   // “
 			"\xe2\x80\x9d" => '"',   // ”
-			"\xe2\x80\x9e" => '"',   // „
-			"\xe2\x80\x9f" => '"',   // ‟
 			"\xe2\x80\x93" => '-',   // –
 			"\xe2\x80\x94" => '--',  // —
 			"\xe2\x80\xa6" => '...', // …
-			"\xc2\xa0"     => ' ',
+			"\xe2\x80\x9a" => "'",   // ‚
+			"\xe2\x80\x9b" => "'",   // ‛
+			"\xe2\x80\x9e" => '"',   // „
+			"\xe2\x80\x9f" => '"',   // ‟
+			"\xc2\xa0"     => ' ',   // Non-breaking space
 		);
 		// Replace UTF-8 characters
 		$cleanedData = strtr($data, $replacementChars);
 
 		// Replace Windows-1252 equivalents
-		$cleanedData = $this->mb_str_replace(array(chr(145), chr(146), chr(147), chr(148), chr(150), chr(151), chr(133), chr(194)), $replacementChars, $cleanedData);
+		$cleanedData = $this->mb_str_replace(array(
+			chr(145), // ‘
+			chr(146), // ’
+			chr(147), // “
+			chr(148), // ”
+			chr(150), // –
+			chr(151), // —
+			chr(133), // …
+		), array_values(array_slice($replacementChars, 0, 7)), $cleanedData);
 
 		return $cleanedData;
 	}

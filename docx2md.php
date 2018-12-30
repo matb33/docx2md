@@ -330,15 +330,16 @@ class Docx2md
 			$formattingTags = array('i:bold', 'i:italic', 'i:strikethrough', 'i:line');
 
 			foreach ($formattingTags as $tag) {
-				// Convert parallel repeated tags to single instance
-				// e.g. `<i:x>foo</i:x><i:x>bar</i:x>` to `<i:x>foo bar</i:x>`
-				$xml = preg_replace("/(<\/{$tag}>)[ ]*<{$tag}>/", ' ', $xml);
+				// Remove parallel repeated tags
+				// e.g. `<i:bold>foo</i:bold><i:bold>bar</i:bold>` to `<i:bold>foobar</i:bold>`
+				$xml = preg_replace("/<\/{$tag}><{$tag}>/", '', $xml);
+				$xml = preg_replace("/<\/{$tag}>\s+<{$tag}>/", ' ', $xml);
 
-				// Remove any number of spaces that follow the opening tag
-				$xml = preg_replace("/(<{$tag}[^>]*>)[ ]*/", ' \\1', $xml);
+				// Remove any number of spaces that proceed an opening tag
+				$xml = preg_replace("/(<{$tag}[^>]*>)\s+/", '\\1', $xml);
 
-				// Remove multiple spaces before closing tags
-				$xml = preg_replace("/[ ]*<\/{$tag}>/", "</{$tag}>", $xml);
+				// Remove any number of spaces that precede a closing tag
+				$xml = preg_replace("/\s+(<\/{$tag}>)/", '\\1', $xml);
 			}
 
 			// Convert HTML line breaks to new lines

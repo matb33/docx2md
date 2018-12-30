@@ -1019,7 +1019,11 @@ XML
 
 		<!-- Bulleted, unordered list-item -->
 		<xsl:template match="i:listitem[@type='%d']">
-			<xsl:value-of select="substring('         ', 1, @level * 3)" />
+			<xsl:variable name="level" select="@level" />
+			<xsl:variable name="type" select="@type" />
+			<xsl:if test="preceding-sibling::*[1]/@type = $type or not(preceding-sibling::i:listitem[@level = ($level - 1) and @type = $type])">
+				<xsl:value-of select="substring('         ', 1, $level * 3)" />
+			</xsl:if>
 			<xsl:text> - </xsl:text>
 			<xsl:apply-templates />
 			<xsl:text>&#xa;</xsl:text>
@@ -1032,7 +1036,9 @@ XML
 		<xsl:template match="i:listitem[@type='%d']">
 			<xsl:variable name="level" select="@level" />
 			<xsl:variable name="type" select="@type" />
-			<xsl:value-of select="substring('         ', 1, $level * 3)" />
+			<xsl:if test="preceding-sibling::*[1]/@type = $type or not(preceding-sibling::i:listitem[@level = ($level - 1) and @type = $type])">
+				<xsl:value-of select="substring('         ', 1, $level * 3)" />
+			</xsl:if>
 			<xsl:text> 1. </xsl:text>
 			<xsl:apply-templates />
 			<xsl:text>&#xa;</xsl:text>

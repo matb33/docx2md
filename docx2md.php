@@ -7,7 +7,7 @@
  *
  * @author  Jonathan Goode <https://github.com/u01jmg3>, Mathieu Bouchard <https://github.com/matb33>
  * @license http://www.opensource.org/licenses/mit-license.php MIT License
- * @version 1.0.1
+ * @version 1.0.3
  */
 
 namespace Docx2md;
@@ -190,9 +190,9 @@ class Docx2md
 			$optionImage = true;
 		}
 
-		//==========================================================================
-		// Extract command line parameters
-		//==========================================================================
+		//==================================
+		// Extract command line parameters =
+		//==================================
 
 		$docxFilename = null;
 		$mdFilename   = null;
@@ -231,9 +231,9 @@ class Docx2md
 				}
 			}
 
-			//==========================================================================
-			// Step 1: Extract Word doc to a temporary location and delete relevant images
-			//==========================================================================
+			//==============================================================================
+			// Step 1: Extract Word doc to a temporary location and delete relevant images =
+			//==============================================================================
 
 			$documentFolder = sys_get_temp_dir() . '/' . md5($docxFilename);
 
@@ -277,9 +277,9 @@ class Docx2md
 				die("The .docx file appears to be corrupt (i.e. it can't be opened using Zip). Please try re-saving your document and re-uploading, or ensuring that you are providing a valid .docx file.");
 			}
 
-			//==========================================================================
-			// Step 2: Read the main document.xml and also bring in the rels document
-			//==========================================================================
+			//=========================================================================
+			// Step 2: Read the main document.xml and also bring in the rels document =
+			//=========================================================================
 
 			$wordDocument = new \DOMDocument(self::VERSION, self::ENCODING);
 			$wordDocument->load($documentFolder . '/word/document.xml');
@@ -303,9 +303,9 @@ class Docx2md
 				die($mainDocument->saveXML());
 			}
 
-			//==========================================================================
-			// Step 3: Convert the bulk of the docx XML to an intermediary format
-			//==========================================================================
+			//=====================================================================
+			// Step 3: Convert the bulk of the docx XML to an intermediary format =
+			//=====================================================================
 
 			$xslDocument = new \DOMDocument(self::VERSION, self::ENCODING);
 			$xslDocument->loadXML(self::DOCX_TO_INTERMEDIARY_TRANSFORM);
@@ -314,11 +314,11 @@ class Docx2md
 			$processor->importStyleSheet($xslDocument);
 			$intermediaryDocument = $processor->transformToDoc($mainDocument);
 
-			//==========================================================================
-			// Step 4: Use string functions to trim away unwanted whitespace in
-			// specific places. Use DOMXPath to iterate through specific tags and
-			// clean the data
-			//==========================================================================
+			//=====================================================================
+			// Step 4: Use string functions to trim away unwanted whitespace in   =
+			// specific places. Use DOMXPath to iterate through specific tags and =
+			// clean the data                                                     =
+			//=====================================================================
 
 			$xml = $intermediaryDocument->saveXML();
 
@@ -428,9 +428,9 @@ class Docx2md
 				die($intermediaryDocument->saveXML());
 			}
 
-			//==========================================================================
-			// Step 5: Convert from the intermediary XML format to Markdown
-			//==========================================================================
+			//===============================================================
+			// Step 5: Convert from the intermediary XML format to Markdown =
+			//===============================================================
 
 			$xslDocument = new \DOMDocument(self::VERSION, self::ENCODING);
 			if (!empty($optionImage)) {
@@ -450,10 +450,10 @@ class Docx2md
 
 			$this->markdown = $markdown;
 
-			//==========================================================================
-			// Step 6: If the Markdown output file was specified, write it. Otherwise
-			// just write to STDOUT (echo)
-			//==========================================================================
+			//=========================================================================
+			// Step 6: If the Markdown output file was specified, write it. Otherwise =
+			// just write to STDOUT (echo)                                            =
+			//=========================================================================
 
 			if ($this->isClient && !$isTestMode) {
 				$output = '';
@@ -489,9 +489,9 @@ class Docx2md
 				echo $output;
 			}
 
-			//==========================================================================
-			// Step 7: Clean-up
-			//==========================================================================
+			//===================
+			// Step 7: Clean-up =
+			//===================
 
 			if (file_exists($documentFolder)) {
 				$this->rrmdir($documentFolder);
@@ -501,9 +501,9 @@ class Docx2md
 		return $this;
 	}
 
-	//==============================================================================
-	// Helper functions
-	//==============================================================================
+	//===================
+	// Helper functions =
+	//===================
 
 	/**
 	 * Extract the files from a given zipped folder.
@@ -690,9 +690,9 @@ class Docx2md
 		}
 	}
 
-	//==============================================================================
-	// XSL Stylesheets
-	//==============================================================================
+	//==================
+	// XSL Stylesheets =
+	//==================
 
 	const DOCX_TO_INTERMEDIARY_TRANSFORM = <<<'XML'
 <?xml version="1.0"?>

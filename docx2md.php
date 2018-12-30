@@ -1018,8 +1018,8 @@ XML
 			<xsl:text> - </xsl:text>
 			<xsl:apply-templates />
 			<xsl:text>&#xa;</xsl:text>
-			<xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'"
-				><xsl:text>&#xa;</xsl:text>
+			<xsl:if test="local-name(following-sibling::i:*[1]) != 'listitem'">
+				<xsl:text>&#xa;</xsl:text>
 			</xsl:if>
 		</xsl:template>
 

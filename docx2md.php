@@ -105,10 +105,10 @@ class Docx2md
 			$options = getopt($shortOptions, $longOptionsArray);
 
 			if ($options) {
-				$shortOptionsArray = array_map(function($item) {
+				$shortOptionsArray = array_map(function ($item) {
 					return rtrim($item, ':');
 				}, $shortOptionsArray);
-				$longOptionsArray = array_map(function($item) {
+				$longOptionsArray = array_map(function ($item) {
 					return rtrim($item, ':');
 				}, $longOptionsArray);
 
@@ -172,7 +172,7 @@ class Docx2md
 			$output .= 'If no destination file is specified, output will be written to the console excluding any images.';
 			$output .= PHP_EOL;
 			die($output);
-		} else if (empty($optionDebug)) {
+		} elseif (empty($optionDebug)) {
 			// If option is set and not already in test mode
 			// run tests and *continue on* with converting
 			if (!empty($optionTest) && !$isTestMode) {
@@ -195,7 +195,7 @@ class Docx2md
 		foreach ($args as $index => $arg) {
 			if ($index === 0) {
 				$docxFilename = $args[$index];
-			} else if ($index === 1) {
+			} elseif ($index === 1) {
 				$mdFilename = $args[$index];
 			}
 		}
@@ -220,7 +220,7 @@ class Docx2md
 			if (!$isTestMode && $mdFilename !== null) {
 				if ($hasMultipleFiles) {
 					$mdFilename = basename($docxFilename, 'docx') . 'md';
-				} else if (file_exists($mdFilename)) {
+				} elseif (file_exists($mdFilename)) {
 					// Generate a random extension so as not to overwrite destination filename
 					$mdFilename = $mdFilename . '.' . substr(md5(uniqid(rand(), true)), 0, 5);
 				}
@@ -265,6 +265,7 @@ class Docx2md
 				} else {
 					$this->extractFolder($zip, 'word/media', $documentFolder);
 				}
+
 				$zip->extractTo($documentFolder, array('word/document.xml', 'word/_rels/document.xml.rels'));
 				$zip->close();
 			} else {
@@ -285,7 +286,7 @@ class Docx2md
 			$xml = $wordDocument->saveXML();
 
 			// libxml < 2.7 fix
-			$xml = str_replace('r:id=',    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
+			$xml = str_replace('r:id=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
 			$xml = str_replace('r:embed=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed=', $xml);
 
 			$mainDocument = new \DOMDocument(self::VERSION, self::ENCODING);
@@ -632,10 +633,10 @@ class Docx2md
 	/**
 	 * Test markdown converter
 	 *
-	 * @param $args
+	 * @param  array $args
 	 * @return void
 	 */
-	private function runTests($args)
+	private function runTests(array $args)
 	{
 		$src       = 'examples';
 		$formatter = ' %s. %s' . self::WHITE . ': %s' . PHP_EOL;

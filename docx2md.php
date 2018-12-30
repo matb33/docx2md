@@ -25,6 +25,11 @@ class Docx2md
 	const GREEN  = "\033[32m";
 	const YELLOW = "\033[33m";
 
+	// Generally the type values defined in a document will be 1 or 2 if standard lists are in use
+	// Some documents may have the inverse setup in which case swap the values round
+	const UNORDERED_LIST_TYPE = 1;
+	const ORDERED_LIST_TYPE   = 2;
+
 	/**
 	 * Track the converted markdown output
 	 *
@@ -432,10 +437,10 @@ class Docx2md
 				// Replace image placeholder with image template
 				$imageFilename = ($mdFilename) ? basename($mdFilename, '.md') . '.' : null;
 				$imageTemplate = sprintf(self::IMAGE_TEMPLATE, $imageFolder, $imageFilename);
-				$xslDocument->loadXML(sprintf(self::INTERMEDIARY_TO_MARKDOWN_TRANSFORM, $imageTemplate));
+				$xslDocument->loadXML(sprintf(self::INTERMEDIARY_TO_MARKDOWN_TRANSFORM, self::UNORDERED_LIST_TYPE, self::ORDERED_LIST_TYPE, $imageTemplate));
 			} else {
 				// Replace image placeholder with a blank string
-				$xslDocument->loadXML(sprintf(self::INTERMEDIARY_TO_MARKDOWN_TRANSFORM, ''));
+				$xslDocument->loadXML(sprintf(self::INTERMEDIARY_TO_MARKDOWN_TRANSFORM, self::UNORDERED_LIST_TYPE, self::ORDERED_LIST_TYPE, ''));
 			}
 
 			$processor = new \XSLTProcessor();
@@ -1012,8 +1017,8 @@ XML
 			</xsl:if>
 		</xsl:template>
 
-		<!-- Bulleted list-item -->
-		<xsl:template match="i:listitem[@type!='2']">
+		<!-- Bulleted, unordered list-item -->
+		<xsl:template match="i:listitem[@type='%d']">
 			<xsl:value-of select="substring('         ', 1, @level * 3)" />
 			<xsl:text> - </xsl:text>
 			<xsl:apply-templates />
@@ -1023,8 +1028,8 @@ XML
 			</xsl:if>
 		</xsl:template>
 
-		<!-- Numbered list-item -->
-		<xsl:template match="i:listitem[@type='2']">
+		<!-- Numbered, ordered list-item -->
+		<xsl:template match="i:listitem[@type='%d']">
 			<xsl:variable name="level" select="@level" />
 			<xsl:variable name="type" select="@type" />
 			<xsl:value-of select="substring('         ', 1, $level * 3)" />

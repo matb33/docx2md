@@ -78,14 +78,20 @@ class Docx2md
 	}
 
 	/**
-	 * Parse a .docx file to markdown
+	 * Parse a `.docx` file and begin the conversion to markdown
 	 *
 	 * @param  string $filename
 	 * @return string
 	 */
 	public function parseFile($filename)
 	{
-		return $this->docx2md(array($filename));
+		$fileInfo = pathinfo($filename);
+
+		if ($fileInfo['extension'] === 'docx') {
+			return $this->docx2md(array($filename));
+		}
+
+		die("Failed to parse \"{$filename}\": please retry using a .docx file");
 	}
 
 	/**

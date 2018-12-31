@@ -30,6 +30,8 @@ class Docx2md
 	const UNORDERED_LIST_TYPE = 1;
 	const ORDERED_LIST_TYPE   = 2;
 
+	const REGEX_PUNCTUATION = '\.,;:\?\!';
+
 	/**
 	 * Track the converted markdown output
 	 *
@@ -359,7 +361,7 @@ class Docx2md
 			// Ensure spacing exists between closing and opening formatting tags
 			// unless punctuation is encountered
 			$anyFormattingTag = 'i:(bold|italic|strikethrough|line)';
-			$xml = preg_replace("/(<\/{$anyFormattingTag}>)(<{$anyFormattingTag}>)([^\.,;:\?\!])/", '\\1 \\3\\5', $xml);
+			$xml = preg_replace("/(<\/{$anyFormattingTag}>)(<{$anyFormattingTag}>)([^" . self::REGEX_PUNCTUATION . "])/", '\\1 \\3\\5', $xml);
 
 			$intermediaryDocument->loadXML($xml);
 
@@ -388,7 +390,7 @@ class Docx2md
 					$output = preg_replace('! +!', ' ', $output);
 
 					// Remove spaces preceding punctuation
-					$output = preg_replace('/\s+([\.,;:\?\!])/', '\\1', $output);
+					$output = preg_replace('/\s+([' . self::REGEX_PUNCTUATION . '])/', '\\1', $output);
 
 					// Escape existing chars used in markdown as formatting
 					$output = addcslashes($output, '*_~`');

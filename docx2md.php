@@ -129,12 +129,17 @@ class Docx2md
 					$variableName = 'option' . ucfirst($longOption);
 
 					${$variableName} = false;
-					${$longOption . 'Options'} = array($shortOptionsArray[$index], $longOptionsArray[$index], "-{$shortOptionsArray[$index]}", "--{$longOptionsArray[$index]}");
+					${"{$longOption}Options"} = array(
+						$shortOptionsArray[$index],
+						$longOptionsArray[$index],
+						"-{$shortOptionsArray[$index]}",
+						"--{$longOptionsArray[$index]}",
+					);
 
-					if (array_key_exists(${$longOption . 'Options'}[0], $options) ||
-						array_key_exists(${$longOption . 'Options'}[1], $options) ||
-						array_intersect($args, ${$longOption . 'Options'})) {
-						$optionValue = array_intersect_key($options, array_flip(${$longOption . 'Options'}));
+					if (array_key_exists(${"{$longOption}Options"}[0], $options) ||
+						array_key_exists(${"{$longOption}Options"}[1], $options) ||
+						array_intersect($args, ${"{$longOption}Options"})) {
+						$optionValue = array_intersect_key($options, array_flip(${"{$longOption}Options"}));
 						$optionValue = count($optionValue) ? array_values($optionValue)[0] : null;
 
 						if (is_bool($optionValue)) {
@@ -154,6 +159,7 @@ class Docx2md
 		$args = array_filter($args, function ($value) {
 			return (substr($value, 0, 1) === '-') === false;
 		});
+
 		// Re-index the array
 		$args = array_values($args);
 
@@ -184,6 +190,7 @@ class Docx2md
 			$output .= PHP_EOL;
 			$output .= 'If no destination file is specified, output will be written to the console excluding any images.';
 			$output .= PHP_EOL;
+
 			die($output);
 		} elseif (empty($optionDebug)) {
 			// If option is set and not already in test mode
@@ -213,10 +220,10 @@ class Docx2md
 			}
 		}
 
-		if (!file_exists($docxFilename)) {
-			die("Input .docx file/directory does not exist: \"{$docxFilename}\"");
-		} else {
+		if (file_exists($docxFilename)) {
 			$docxFilename = realpath($docxFilename);
+		} else {
+			die("Input .docx file/directory does not exist: \"{$docxFilename}\"");
 		}
 
 		$hasMultipleFiles = false;
@@ -256,7 +263,7 @@ class Docx2md
 				if ($isTestMode) {
 					$imageFolder = 'images';
 				} else {
-					$imageFolder = $destination . 'images';
+					$imageFolder = "{$destination}images";
 					if (file_exists($imageFolder) && is_dir($imageFolder)) {
 						// Clean-up existing images only associated with the defined markdown file
 						$images = glob("{$imageFolder}/" . basename($mdFilename, '.md') . '.*.{bmp,gif,jpg,jpeg,png}', GLOB_BRACE);
@@ -284,7 +291,7 @@ class Docx2md
 				$zip->extractTo($documentFolder, array('word/document.xml', 'word/_rels/document.xml.rels'));
 				$zip->close();
 			} else {
-				die("The .docx file appears to be corrupt (i.e. it can't be opened using Zip). Please try re-saving your document and re-uploading, or ensuring that you are providing a valid .docx file.");
+				die('The .docx file appears to be corrupt (i.e. it can\'t be opened using Zip). Please try re-saving your document and re-uploading, or ensuring that you are providing a valid .docx file.');
 			}
 
 			//=========================================================================
@@ -292,10 +299,10 @@ class Docx2md
 			//=========================================================================
 
 			$wordDocument = new \DOMDocument(self::VERSION, self::ENCODING);
-			$wordDocument->load($documentFolder . '/word/document.xml');
+			$wordDocument->load("{$documentFolder}/word/document.xml");
 
 			$wordDocumentRels = new \DOMDocument(self::VERSION, self::ENCODING);
-			$wordDocumentRels->load($documentFolder . '/word/_rels/document.xml.rels');
+			$wordDocumentRels->load("{$documentFolder}/word/_rels/document.xml.rels");
 			$wordDocument->documentElement->appendChild($wordDocument->importNode($wordDocumentRels->documentElement, true));
 
 			$xml = $wordDocument->saveXML();
@@ -310,6 +317,7 @@ class Docx2md
 			if (!empty($optionDebug) && $optionDebug === self::DEBUG_WORD_XML) {
 				$mainDocument->preserveWhiteSpace = false;
 				$mainDocument->formatOutput = true;
+
 				die($mainDocument->saveXML());
 			}
 
@@ -437,6 +445,7 @@ class Docx2md
 			if (!empty($optionDebug) && $optionDebug === self::DEBUG_INTERMEDIARY_XML) {
 				$intermediaryDocument->preserveWhiteSpace = false;
 				$intermediaryDocument->formatOutput = true;
+
 				die($intermediaryDocument->saveXML());
 			}
 
@@ -449,6 +458,7 @@ class Docx2md
 				// Replace image placeholder with image template
 				$imageFilename = ($mdFilename) ? basename($mdFilename, '.md') . '.' : null;
 				$imageTemplate = sprintf(self::IMAGE_TEMPLATE, $imageFolder, $imageFilename);
+
 				$xslDocument->loadXML(sprintf(self::INTERMEDIARY_TO_MARKDOWN_TRANSFORM, self::UNORDERED_LIST_TYPE, self::ORDERED_LIST_TYPE, $imageTemplate));
 			} else {
 				// Replace image placeholder with a blank string
@@ -482,7 +492,7 @@ class Docx2md
 				}
 
 				if ($mdFilename !== null) {
-					file_put_contents("{$destination}" . $mdFilename, $markdown);
+					file_put_contents("{$destination}{$mdFilename}", $markdown);
 					$output .= PHP_EOL;
 
 					if ($hasMultipleFiles) {

@@ -228,8 +228,10 @@ class Docx2md
 				if ($hasMultipleFiles) {
 					$mdFilename = basename($docxFilename, 'docx') . 'md';
 				} elseif (file_exists($mdFilename)) {
-					// Generate a random extension so as not to overwrite destination filename
-					$mdFilename = $mdFilename . '.' . substr(md5(uniqid(rand(), true)), 0, 5);
+					// Generate a random suffix to prevent overwriting an existing file
+					$mdFilename  = rtrim($mdFilename, 'md');
+					$mdFilename .= substr(md5(uniqid(rand(), true)), 0, 5);
+					$mdFilename .= '.md';
 				}
 			}
 

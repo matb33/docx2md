@@ -2,6 +2,8 @@
 *.md
 *.md.*
 *.tmp
+!CONTRIBUTING.md
 !README.md
+!.github/**/*
 !examples/**/*
 */**/~$*

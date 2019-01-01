@@ -15,8 +15,8 @@ namespace Docx2md;
 class Docx2md
 {
 	const PHP_SAPI_NAME          = 'cli';
-	const VERSION                = '1.0';
-	const ENCODING               = 'UTF-8';
+	const DOM_VERSION            = '1.0';
+	const DOM_ENCODING           = 'UTF-8';
 	const DEBUG_WORD_XML         = '1';
 	const DEBUG_INTERMEDIARY_XML = '2';
 
@@ -121,6 +121,7 @@ class Docx2md
 				$shortOptionsArray = array_map(function ($item) {
 					return rtrim($item, ':');
 				}, $shortOptionsArray);
+
 				$longOptionsArray = array_map(function ($item) {
 					return rtrim($item, ':');
 				}, $longOptionsArray);
@@ -298,10 +299,10 @@ class Docx2md
 			// Step 2: Read the main document.xml and also bring in the rels document =
 			//=========================================================================
 
-			$wordDocument = new \DOMDocument(self::VERSION, self::ENCODING);
+			$wordDocument = new \DOMDocument(self::DOM_VERSION, self::DOM_ENCODING);
 			$wordDocument->load("{$documentFolder}/word/document.xml");
 
-			$wordDocumentRels = new \DOMDocument(self::VERSION, self::ENCODING);
+			$wordDocumentRels = new \DOMDocument(self::DOM_VERSION, self::DOM_ENCODING);
 			$wordDocumentRels->load("{$documentFolder}/word/_rels/document.xml.rels");
 			$wordDocument->documentElement->appendChild($wordDocument->importNode($wordDocumentRels->documentElement, true));
 
@@ -311,7 +312,7 @@ class Docx2md
 			$xml = str_replace('r:id=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id=', $xml);
 			$xml = str_replace('r:embed=', 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed=', $xml);
 
-			$mainDocument = new \DOMDocument(self::VERSION, self::ENCODING);
+			$mainDocument = new \DOMDocument(self::DOM_VERSION, self::DOM_ENCODING);
 			$mainDocument->loadXML($xml);
 
 			if (!empty($optionDebug) && $optionDebug === self::DEBUG_WORD_XML) {
@@ -325,7 +326,7 @@ class Docx2md
 			// Step 3: Convert the bulk of the docx XML to an intermediary format =
 			//=====================================================================
 
-			$xslDocument = new \DOMDocument(self::VERSION, self::ENCODING);
+			$xslDocument = new \DOMDocument(self::DOM_VERSION, self::DOM_ENCODING);
 			$xslDocument->loadXML(self::DOCX_TO_INTERMEDIARY_TRANSFORM);
 
 			$processor = new \XSLTProcessor();
@@ -453,7 +454,7 @@ class Docx2md
 			// Step 5: Convert from the intermediary XML format to Markdown =
 			//===============================================================
 
-			$xslDocument = new \DOMDocument(self::VERSION, self::ENCODING);
+			$xslDocument = new \DOMDocument(self::DOM_VERSION, self::DOM_ENCODING);
 			if (!empty($optionImage)) {
 				// Replace image placeholder with image template
 				$imageFilename = ($mdFilename) ? basename($mdFilename, '.md') . '.' : null;

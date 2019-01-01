@@ -14,6 +14,7 @@ namespace Docx2md;
 
 class Docx2md
 {
+	const DOCX2MD_VERSION        = '1.0.3';
 	const PHP_SAPI_NAME          = 'cli';
 	const DOM_VERSION            = '1.0';
 	const DOM_ENCODING           = 'UTF-8';
@@ -108,7 +109,7 @@ class Docx2md
 			shell_exec('chcp 65001');
 
 			// Check command line options
-			$longOptionsArray = array('debug:', 'image', 'test');
+			$longOptionsArray = array('debug:', 'image', 'test', 'version');
 
 			$shortOptionsArray = array_map(function ($value) {
 				return substr($value, 0, 1) . preg_replace('/[a-zA-Z0-9]/', '', $value);
@@ -164,7 +165,9 @@ class Docx2md
 		// Re-index the array
 		$args = array_values($args);
 
-		if (count($args) <= 0) {
+		if (!empty($optionVersion)) {
+			die(self::GREEN . 'Docx2md ' . self::WHITE . 'version ' . self::YELLOW . self::DOCX2MD_VERSION . self::WHITE);
+		} elseif (count($args) <= 0) {
 			// If option is set and not already in test mode
 			// run tests and *stop*
 			if (!empty($optionTest) && !$isTestMode) {
@@ -187,6 +190,9 @@ class Docx2md
 			$output .= PHP_EOL;
 			$output .= self::GREEN . '  -t, --test' . self::WHITE;
 			$output .= '        Output test results then terminate';
+			$output .= PHP_EOL;
+			$output .= self::GREEN . '  -v, --version' . self::WHITE;
+			$output .= '     Display this application version';
 			$output .= PHP_EOL;
 			$output .= PHP_EOL;
 			$output .= 'If no destination file is specified, output will be written to the console excluding any images.';

@@ -237,10 +237,10 @@ class Docx2md
 		if (is_dir($docxFilename)) {
 			$hasMultipleFiles = true;
 			$sourceFiles = glob("{$docxFilename}\\*.docx");
-			$destination = realpath($mdFilename) . '\\';
+			$destination = realpath($mdFilename);
 		} else {
 			$sourceFiles = glob($docxFilename);
-			$destination = realpath(dirname($docxFilename)) . '\\';
+			$destination = realpath(dirname($docxFilename));
 		}
 
 		foreach ($sourceFiles as $index => $docxFilename) {
@@ -270,7 +270,7 @@ class Docx2md
 				if ($isTestMode) {
 					$imageFolder = 'images';
 				} else {
-					$imageFolder = "{$destination}images";
+					$imageFolder = "{$destination}\\images";
 					if (file_exists($imageFolder) && is_dir($imageFolder)) {
 						// Clean-up existing images only associated with the defined markdown file
 						$images = glob("{$imageFolder}/" . basename($mdFilename, '.md') . '.*.{bmp,gif,jpg,jpeg,png}', GLOB_BRACE);
@@ -484,7 +484,7 @@ class Docx2md
 				}
 
 				if ($mdFilename !== null) {
-					file_put_contents("{$destination}{$mdFilename}", $markdown);
+					file_put_contents("{$destination}\\{$mdFilename}", $markdown);
 					$output .= PHP_EOL;
 
 					if ($hasMultipleFiles) {

@@ -427,27 +427,12 @@ class Docx2md
 				}
 			}
 
-			$imageCount = 0;
-			foreach ($xpath->query('//i:image') as $node) {
-				$imageCount++;
-			}
-
-			$paragraphCount = 0;
-			foreach ($xpath->query('//i:para') as $node) {
-				$paragraphCount++;
-			}
-
-			$tableCount = 0;
-			foreach ($xpath->query('//i:table') as $node) {
-				$tableCount++;
-			}
-
 			$this->metadata['characterCount']['withSpaces']    = $characterCountWithSpaces;
 			$this->metadata['characterCount']['withoutSpaces'] = $characterCountWithoutSpaces;
-			$this->metadata['imageCount']                      = $imageCount;
-			$this->metadata['paragraphCount']                  = $paragraphCount;
-			$this->metadata['tableCount']                      = $tableCount;
 			$this->metadata['wordCount']                       = $wordCount;
+			$this->metadata['imageCount']                      = count($xpath->query('//i:image'));
+			$this->metadata['paragraphCount']                  = count($xpath->query('//i:para'));
+			$this->metadata['tableCount']                      = count($xpath->query('//i:table'));
 
 			if (!empty($optionDebug) && $optionDebug === self::DEBUG_INTERMEDIARY_XML) {
 				$intermediaryDocument->preserveWhiteSpace = false;

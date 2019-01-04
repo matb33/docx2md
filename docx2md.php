@@ -436,7 +436,7 @@ class Docx2md
 
 			if (!empty($optionDebug) && $optionDebug === self::DEBUG_INTERMEDIARY_XML) {
 				$intermediaryDocument->preserveWhiteSpace = false;
-				$intermediaryDocument->formatOutput = true;
+				$intermediaryDocument->formatOutput       = true;
 
 				die($intermediaryDocument->saveXML());
 			}
@@ -556,7 +556,7 @@ class Docx2md
 	 */
 	private function rrmdir($directory)
 	{
-		foreach (glob($directory . '/*') as $file) {
+		foreach (glob("{$directory}/*") as $file) {
 			if (is_dir($file)) {
 				$this->rrmdir($file);
 			} else {

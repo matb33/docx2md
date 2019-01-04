@@ -243,16 +243,26 @@ class Docx2md
 			$destination = realpath(dirname($docxFilename));
 		}
 
+		if (empty($destination)) {
+			$destination = '.';
+		}
+
 		foreach ($sourceFiles as $index => $docxFilename) {
 			if (!$isTestMode && $mdFilename !== null) {
 				if ($hasMultipleFiles) {
-					$mdFilename = basename($docxFilename, 'docx') . 'md';
-				} elseif (file_exists($mdFilename)) {
-					// Generate a random suffix to prevent overwriting an existing file
-					$mdFilename  = rtrim($mdFilename, 'md');
-					$mdFilename .= substr(md5(uniqid(rand(), true)), 0, 5);
-					$mdFilename .= '.md';
+					$fileInfo = pathinfo($docxFilename);
+				} else {
+					$fileInfo = pathinfo($mdFilename);
 				}
+
+				$mdFilename = $fileInfo['filename'];
+
+				// Generate a random suffix to prevent overwriting an existing file
+				if (file_exists("{$destination}\\{$mdFilename}.md")) {
+					$mdFilename .= '.' . substr(md5(uniqid(rand(), true)), 0, 5);
+				}
+
+				$mdFilename .= '.md';
 			}
 
 			//==============================================================================

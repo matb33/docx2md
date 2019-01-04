@@ -661,6 +661,21 @@ class Docx2md
 	}
 
 	/**
+	 * Generate a progress bar based on the input parameters
+	 *
+	 * @param  integer $done
+	 * @param  integer $total
+	 * @return string
+	 */
+	private function progress($done, $total)
+	{
+		$perc = floor(($done / $total) * 100);
+		$left = 100 - $perc;
+
+		return sprintf("\033[0G\033[2K[%'={$perc}s>%-{$left}s] - {$perc}%% - {$done}/{$total}", '', '');
+	}
+
+	/**
 	 * Test markdown converter
 	 *
 	 * @param  array $args
@@ -672,14 +687,15 @@ class Docx2md
 		$formatter = ' %s. %s' . self::WHITE . ': %s' . PHP_EOL;
 		$output    = self::WHITE;
 
-		echo 'Running tests...';
-
 		$files     = glob("{$src}/docx/*.docx");
 		$size      = sizeof($files);
 		$charCount = 0;
 
 		foreach ($files as $n => $file1) {
 			$n++;
+
+			echo $this->progress($n, $size);
+
 			$file2 = basename($file1, '.docx') . '.md';
 
 			$markdown = $this->docx2md(array('', '-i', $file1, $file2), true)
@@ -706,7 +722,7 @@ class Docx2md
 			$output   .= $sprintf;
 		}
 
-		echo ' finished' . ' ' . self::GREEN . html_entity_decode('&radic;') . ' ' . self::GREEN . PHP_EOL . rtrim($output, PHP_EOL);
+		echo PHP_EOL . rtrim($output, PHP_EOL);
 
 		if ($args) {
 			// If performing conversion after running tests, print a separator

@@ -283,7 +283,7 @@ class Docx2md
 					$imageFolder = "{$destination}\\images";
 					if (file_exists($imageFolder) && is_dir($imageFolder)) {
 						// Clean-up existing images only associated with the defined markdown file
-						$images = glob("{$imageFolder}/" . basename($mdFilename, '.md') . '.*.{bmp,gif,jpg,jpeg,png}', GLOB_BRACE);
+						$images = glob("{$imageFolder}\\" . basename($mdFilename, '.md') . '.*.{bmp,gif,jpg,jpeg,png}', GLOB_BRACE);
 						foreach ($images as $image) {
 							if (is_file($image)) {
 								unlink($image);
@@ -394,7 +394,7 @@ class Docx2md
 			// Ensure spacing exists between closing and opening formatting tags
 			// unless punctuation is encountered
 			$anyFormattingTag = 'i:(bold|italic|strikethrough|line)';
-			$xml = preg_replace("/(<\/{$anyFormattingTag}>)(<{$anyFormattingTag}>)([^" . self::REGEX_PUNCTUATION . "])/", '\\1 \\3\\5', $xml);
+			$xml = preg_replace("/(<\/{$anyFormattingTag}>)(<{$anyFormattingTag}>)([^" . self::REGEX_PUNCTUATION . '])/', '\\1 \\3\\5', $xml);
 
 			$intermediaryDocument->loadXML($xml);
 
@@ -549,7 +549,7 @@ class Docx2md
 				if (!is_null($imageFolder) && !is_null($mdFilename)) {
 					// Save matching images to disk
 					if (preg_match('([^\s]+(\.(?i)(bmp|gif|jpe?g|png))$)', $fileName)) {
-						file_put_contents("{$imageFolder}/" . basename($mdFilename, '.md') . '.' . basename($fileName), $zip->getFromIndex($i));
+						file_put_contents("{$imageFolder}\\" . basename($mdFilename, '.md') . '.' . basename($fileName), $zip->getFromIndex($i));
 					}
 				}
 
@@ -566,7 +566,7 @@ class Docx2md
 	 */
 	private function rrmdir($directory)
 	{
-		foreach (glob("{$directory}/*") as $file) {
+		foreach (glob("{$directory}\\*") as $file) {
 			if (is_dir($file)) {
 				$this->rrmdir($file);
 			} else {
@@ -687,7 +687,7 @@ class Docx2md
 		$formatter = ' %s. %s' . self::WHITE . ': %s' . PHP_EOL;
 		$output    = self::WHITE;
 
-		$files     = glob("{$src}/docx/*.docx");
+		$files     = glob("{$src}\\docx\\*.docx");
 		$size      = sizeof($files);
 		$charCount = 0;
 
@@ -700,7 +700,7 @@ class Docx2md
 
 			$markdown = $this->docx2md(array('', '-i', $file1, $file2), true)
 							 ->markdown;
-			$md = "{$src}/md/{$file2}";
+			$md = "{$src}\\md\\{$file2}";
 
 			$fileHash1 = sha1(preg_replace('/\v+/', PHP_EOL . PHP_EOL, $markdown));
 			$fileHash2 = sha1(preg_replace('/\v+/', PHP_EOL . PHP_EOL, file_get_contents($md)));

@@ -7,14 +7,14 @@
  *
  * @author  Jonathan Goode <https://github.com/u01jmg3>, Mathieu Bouchard <https://github.com/matb33>
  * @license http://www.opensource.org/licenses/mit-license.php MIT License
- * @version 1.0.4
+ * @version 1.0.5
  */
 
 namespace Docx2md;
 
 class Docx2md
 {
-	const DOCX2MD_VERSION        = '1.0.4';
+	const DOCX2MD_VERSION        = '1.0.5';
 	const PHP_SAPI_NAME          = 'cli';
 	const DOM_VERSION            = '1.0';
 	const DOM_ENCODING           = 'UTF-8';

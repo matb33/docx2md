@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This PHP class will read a Word file (*.docx), parse it and return a
  * markdown file.
@@ -54,7 +55,7 @@ class Docx2md
 	 */
 	public $metadata = array(
 		'characterCount' => array(
-			'withSpaces'	=> 0,
+			'withSpaces'    => 0,
 			'withoutSpaces' => 0,
 		),
 		'imageCount'     => 0,
@@ -138,9 +139,11 @@ class Docx2md
 						"--{$longOptionsArray[$index]}",
 					);
 
-					if (array_key_exists(${"{$longOption}Options"}[0], $options) ||
+					if (
+						array_key_exists(${"{$longOption}Options"}[0], $options) ||
 						array_key_exists(${"{$longOption}Options"}[1], $options) ||
-						array_intersect($args, ${"{$longOption}Options"})) {
+						array_intersect($args, ${"{$longOption}Options"})
+					) {
 						$optionValue = array_intersect_key($options, array_flip(${"{$longOption}Options"}));
 						$optionValue = count($optionValue) ? array_values($optionValue)[0] : null;
 
@@ -295,7 +298,7 @@ class Docx2md
 				}
 			}
 
-			$zip = new \ZipArchive;
+			$zip = new \ZipArchive();
 			$res = $zip->open($docxFilename);
 
 			if ($res === true) {
@@ -470,7 +473,7 @@ class Docx2md
 			$processor = new \XSLTProcessor();
 			$processor->importStyleSheet($xslDocument);
 			$markdown = $processor->transformToXml($intermediaryDocument);
-			$markdown = rtrim(join(PHP_EOL, array_map('rtrim', explode("\n", $markdown))));
+			$markdown = rtrim(implode(PHP_EOL, array_map('rtrim', explode("\n", $markdown))));
 
 			$this->markdown = $markdown;
 
@@ -605,7 +608,7 @@ class Docx2md
 				$replace   = $replacements[$key];
 				$searchLen = mb_strlen($search, $encoding);
 
-				$sb = [];
+				$sb = array();
 				while (($offset = mb_strpos($subject, $search, 0, $encoding)) !== false) {
 					$sb[]    = mb_substr($subject, 0, $offset, $encoding);
 					$subject = mb_substr($subject, $offset + $searchLen, null, $encoding);
@@ -688,7 +691,7 @@ class Docx2md
 		$output    = self::WHITE;
 
 		$files     = glob("{$src}\\docx\\*.docx");
-		$size      = sizeof($files);
+		$size      = count($files);
 		$charCount = 0;
 
 		foreach ($files as $n => $file1) {

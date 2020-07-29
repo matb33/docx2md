@@ -1,7 +1,8 @@
 <?php
-    require_once '..\docx2md.php';
 
-    $converter = new Docx2md\Docx2md;
+    require_once __DIR__ . '..\docx2md.php';
+
+    $converter = new Docx2md\Docx2md();
 
     $files = glob('docx/*.docx', GLOB_BRACE);
 

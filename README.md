@@ -13,9 +13,10 @@
 
 ```php
 <?php
+
     require_once 'docx2md.php';
 
-    $converter = new Docx2md\Docx2md;
+    $converter = new Docx2md\Docx2md();
     $converter = $converter->parseFile('word.docx');
     $markdown  = $converter->markdown;
 
